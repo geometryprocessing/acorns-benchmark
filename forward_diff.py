@@ -194,8 +194,9 @@ class Pow(Expr):
         der_base = Expr(base)._forward_diff()
         der_exp = Expr(exp)._forward_diff()
 
-        return "(pow("+base+",("+exp+"-1) * "+\
-                "("+exp+ " * "+ der_base +" + "+base+ " * "+ der_exp+ " * log("+base+")))"
+        return exp + " * pow("+base+",("+exp+"-1))" 
+        # return "(pow("+base+",("+exp+"-1) * "+\
+        #         "("+exp+ " * "+ der_base +" + "+base+ " * "+ der_exp+ " * log("+base+")))"
 
 
 class Sine(Expr):        
@@ -286,14 +287,26 @@ def grad_without_traversal(ast, x=0):
     c_code = c_generator.CGenerator()
     c_code._write(derivative)
 
-if __name__ == "__main__":
-    if len(sys.argv) > 1:
-        filename  = sys.argv[1]
-    else:
-        print("Please provide a filename as argument")
+def main(filename):
+    # if len(sys.argv) > 1:
+    #     filename  = sys.argv[1]
+    # else:
+    #     print("Please provide a filename as argument")
 
     ast = parse_file(filename, use_cpp=True,
             cpp_path='gcc',
             cpp_args=['-E', r'-Iutils/fake_libc_include'])
     # ast.show()
     grad_without_traversal(ast)
+
+# if __name__ == "__main__":
+#     if len(sys.argv) > 1:
+#         filename  = sys.argv[1]
+#     else:
+#         print("Please provide a filename as argument")
+
+#     ast = parse_file(filename, use_cpp=True,
+#             cpp_path='gcc',
+#             cpp_args=['-E', r'-Iutils/fake_libc_include'])
+#     # ast.show()
+#     grad_without_traversal(ast)

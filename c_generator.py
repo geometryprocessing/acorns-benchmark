@@ -22,20 +22,20 @@ class CGenerator(object):
 	def _make_header(self):
 		f = open(self.filename,'w')
 		f.write("#include <math.h>\n\n")
-		funcdecl = "void compute(" + "double x){"+"\n\n"
+		funcdecl = "float compute(" + "double k){"+"\n\n"
 		f.write(funcdecl)
 		f.close()
 
 	def _generate_expr(self,derivative_string):
 		f = open(self.filename,'a')
-		f.write("return "+derivative_string+"\n")
+		f.write("return "+derivative_string+";\n")
 		f.close()		
 
 
 	def _make_footer(self):
 		f = open(self.filename,'a')
 		f.write("}\n\n")
-		funcdecl = "void main(){\n\ncompute("+str(self.points)+")\n\n}"
+		funcdecl = "void main(){\n\ncompute("+str(self.points)+");\n\n}"
 		f.write(funcdecl)
 		f.close()	
 
