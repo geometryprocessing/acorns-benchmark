@@ -35,7 +35,7 @@ class CGenerator(object):
 	def _make_footer(self):
 		f = open(self.filename,'a')
 		f.write("}\n\n")
-		funcdecl = "void main(){\n\ncompute("+str(self.points)+");\n\n}"
+		funcdecl = "void main(){\nfor(int i = 0; i < 100000; i++) {\ncompute("+str(self.points)+");\n}\n}"
 		f.write(funcdecl)
 		f.close()	
 
