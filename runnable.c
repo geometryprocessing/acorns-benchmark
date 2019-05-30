@@ -3,22 +3,24 @@
 #include <time.h>
 #include <stdio.h>
 #define N 10
-void compute(double **values, long num_points, double **ders){
+ #define V 1
+
+void compute(double *values, long num_points, double *ders){
 
 	for(int i = 0; i < num_points; ++i)
 	{
-		double k = values[i][0];
-		ders[i][0]= cos(k) * cos(k)*1 + sin(k) * -1*sin(k)*1 + (pow(k,(2-1)) * (2 * 1 + k * 0 * log(k)));
+		double k = *(values + i * V);
+		*(ders + i * V)= cos(k) * cos(k)*1 + sin(k) * -1*sin(k)*1 + (pow(k,(2-1)) * (2 * 1 + k * 0 * log(k)));
 	}
 }
 
-void read_file_to_array(char* filename, double **args) {
+void read_file_to_array(char* filename, double *args) {
     FILE *file = fopen ( filename, "r" );
     if ( file != NULL ) {
     	char line [ 200 ]; 
    		int i = 0;
     	while ( fgets ( line, sizeof line, file ) != NULL )  {
-      		args[i][0] = atof(line);
+			*(args + i * V) = atof(line);
       		i++;
         }
         fclose ( file );
@@ -27,13 +29,8 @@ void read_file_to_array(char* filename, double **args) {
     }
 }
 int main(int argc, char *argv[]) {
-	double **args = malloc(N * sizeof(double *));
-	double **ders = malloc(N * sizeof(double *));
-	for(int i = 0; i < N; i++) {
-   		args[i] = malloc(2 * sizeof(double));
-   		ders[i] = malloc(2 * sizeof(double));
-	}
-
+	double *args = (double *)malloc(N * V * sizeof(double));
+	double *ders = (double *)malloc(N * V * sizeof(double));
 	read_file_to_array(argv[1], args);
 	compute(args, (long) N, ders);
 	struct timespec tstart={0,0}, tend={0,0};
@@ -48,7 +45,7 @@ int main(int argc, char *argv[]) {
 
     fprintf(fp, "%f ", delta);
 	for(int i = 0; i < N; i++) {
-        fprintf(fp, "%f ", ders[i][0]);
+        fprintf(fp, "%f ", *(ders + i * V));
     }
 	fclose(fp);
 	return 0;
