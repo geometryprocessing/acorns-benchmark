@@ -4,7 +4,7 @@
 # C code generator from autodiff nodes.
 #
 #------------------------------------------------------------------------------
-
+import math
 
 class CGenerator(object):
 	"""Writes a file with C code, hardcoded function definitions,
@@ -46,6 +46,8 @@ class CGenerator(object):
 
 	def _generate_expr(self, var, derivative_string, index):
 
+		# print("VAR_STRINGS: {}".format(var_strings))
+
 		if self.c_code:
 
 			base = ''
@@ -56,6 +58,8 @@ class CGenerator(object):
 
 			ext = '.c'		
 			f = open(self.filename+ext,'a')
+			# for var_string in var_strings:
+			# 	f.write("\t\t{};\n".format(var_string))
 			f.write("\t\tders[i*"+str(self.derivative_count)+"+"+str(index)+"]"+"= "+derivative_string+"; // {} \n".format('df/('+base+')'))
 			f.close()					
 		
@@ -67,6 +71,27 @@ class CGenerator(object):
 			f.write("\t\tders[i*"+str(self.derivative_count)+"+"+str(index)+"]"+" = "+derivative_string+";\n")
 			f.close()	
 		self.count += 1	
+
+	def _generate_copy(self, var, pointer_index, index):
+
+		# print("VAR_STRINGS: {}".format(var_strings))
+
+		if self.c_code:
+
+			base = ''
+			if type(var) is list:
+				base = 'd'+ 'd'.join(var)
+			elif type(var) is str:
+				base = var
+
+			ext = '.c'		
+			f = open(self.filename+ext,'a')
+			# for var_string in var_strings:
+			# 	f.write("\t\t{};\n".format(var_string))
+			f.write("\t\tders[i*"+str(self.derivative_count)+"+"+str(index)+"]"+"= ders["+str(pointer_index)+"]; // {} \n".format('df/('+base+')'))
+			f.close()					
+		
+		self.count += 1			
 
 	def _declare_vars(self, var, index):
 
