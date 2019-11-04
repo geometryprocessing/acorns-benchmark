@@ -88,7 +88,7 @@ class CGenerator(object):
 			f = open(self.filename+ext,'a')
 			# for var_string in var_strings:
 			# 	f.write("\t\t{};\n".format(var_string))
-			f.write("\t\tders[i*"+str(self.derivative_count)+"+"+str(index)+"]"+"= ders["+str(pointer_index)+"]; // {} \n".format('df/('+base+')'))
+			f.write("\t\tders[i*"+str(self.derivative_count)+"+"+str(index)+"]"+"= ders[i*"+str(self.derivative_count)+"+"+str(pointer_index)+"]; // {} \n".format('df/('+base+')'))
 			f.close()					
 		
 		self.count += 1			
