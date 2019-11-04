@@ -31,12 +31,14 @@ void ordering_helper_at_plus_a(const MatrixType& A, MatrixType& symmat)
   for (int i = 0; i < C.rows(); i++) 
   {
       for (typename MatrixType::InnerIterator it(C, i); it; ++it)
-        it.valueRef() = typename MatrixType::Scalar(0);
+        it.valueRef() = 0.0;
   }
   symmat = C + A;
 }
     
 }
+
+#ifndef EIGEN_MPL2_ONLY
 
 /** \ingroup OrderingMethods_Module
   * \class AMDOrdering
@@ -78,6 +80,8 @@ class AMDOrdering
       internal::minimum_degree_ordering(C, perm);
     }
 };
+
+#endif // EIGEN_MPL2_ONLY
 
 /** \ingroup OrderingMethods_Module
   * \class NaturalOrdering
