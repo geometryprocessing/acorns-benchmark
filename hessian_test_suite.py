@@ -96,8 +96,10 @@ if __name__ == "__main__":
     import os
     y_op = []
 
-    for i in range(5,50,5):
-        os.system('python3 function_generator.py '+str(i)+' 100')
+    for i in range(50,650,50):
+
+    # for i in range(5,50,5):
+        os.system('python3 function_generator.py 5 '+str(i))
         f = open('generated_function.txt')
         function_string = ast.literal_eval(f.read())
         f.close()
@@ -211,12 +213,12 @@ if __name__ == "__main__":
     print(y_op)
     plt.figure(1)
     plt.subplot(211)
-    plt.plot(list(range(5,50,5)), y_op)
-    plt.xticks(list(range(5,50,5)))
+    plt.plot(list(range(50,650,50)), y_op)
+    plt.xticks(list(range(50,650,50)))
     plt.title('sequential vs parallel speedup')
     # legend
 
-    plt.xlabel('# of iterations = 10, # of params = 100k, constant # of terms (100), x = # of variables')
+    plt.xlabel('# of iterations = 10, # of params = 100k, constant # of variables (5), x = # of terms')
     plt.ylabel('speedup')
     plt.savefig('results/graph_parallel.png')
     plt.clf()    
