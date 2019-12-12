@@ -58,7 +58,7 @@ class CGenerator(object):
 				# 	f.write("\t\t{};\n".format(var_string))
 				# if index!=0:
 				if index==0: 			
-					f.write("\t#pragma omp parallel sections num_threads(4)\n")	
+					f.write("\t#pragma omp parallel sections \n")	
 					f.write("\t{\n")	
 
 				f.write("\t\t#pragma omp section\n")

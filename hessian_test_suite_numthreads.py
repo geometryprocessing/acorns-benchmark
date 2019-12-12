@@ -94,9 +94,15 @@ def generate_graph(avg_us_single, avg_us_hessian, denom, func_num, function):
 if __name__ == "__main__":
     import ast
     import os
-    y_op = []
+    y_op_2 = []
+    y_op_3 = []
+    y_op_4 = []
 
-    for i in range(300,550,50):
+    start = 50
+    stop = 250
+    ts = 50
+
+    for i in range(start, stop, ts):
 
     # for i in range(5,50,5):
         os.system('python3 function_generator.py 5 '+str(i))
@@ -129,7 +135,9 @@ if __name__ == "__main__":
         for func_num, func in enumerate(functions):
 
             avg_us_single = []
-            avg_us_hessian = []
+            avg_us_parallel_2 = []
+            avg_us_parallel_3 = []
+            avg_us_parallel_4 = []
             avg_pytorch = []
             avg_wenzel_single = []
             avg_wenzel_hessian = []
@@ -138,11 +146,11 @@ if __name__ == "__main__":
 
             # generate and compile our code
             us_utils.generate_function_c_file(func_num, functions, INPUT_FILENAME)
-            print('creating derivtive file')
+            print('creating derivative file')
             us_utils.generate_derivatives_c_file(func_num, functions, INPUT_FILENAME, RUN_C, derivatives_filename="hessian_seq", reverse=REVERSE, second_der=True, parallel = False)
             us_utils.compile_ours(RUN_C, runnable_filename="runnable_hessian", utils_filename=UTILS_FILENAME, derivatives_filename="hessian_seq")
             
-            print('creating derivtive file')
+            print('creating derivative file')
 
             us_utils.generate_derivatives_c_file(func_num, functions, INPUT_FILENAME, RUN_C, derivatives_filename="hessian_par", reverse=REVERSE, second_der=True, parallel =  True)
             us_utils.compile_ours(RUN_C, runnable_filename="runnable_hessian_parallel", utils_filename=UTILS_FILENAME, derivatives_filename="hessian_par")
@@ -159,33 +167,62 @@ if __name__ == "__main__":
 
             # initialize arrays for run
             our_times_seq = []
-            our_times_par = []
+            our_times_par_2 = []
+            our_times_par_3 = []
+            our_times_par_4 = []
 
 
             for i in range(NUM_ITERATIONS):
                 # pytorch = pytorch_utils.run_pytorch()
 
-                print('starting parallel diff')
-                ours_hessian = us_utils.run_ours(functions[func_num], num_params, functions, PARAMS_FILENAME, output_filename="us_output_par.txt", runnable_filename="runnable_hessian_parallel")
-                # print('starting sequential diff')
-                # ours_single = us_utils.run_ours(functions[func_num], num_params, functions, PARAMS_FILENAME, output_filename="us_output_seq.txt", runnable_filename="runnable_hessian")                
+                print('starting sequential diff')
+                os.environ["OMP_NUM_THREADS"] = '1'
+                ours_single = us_utils.run_ours(functions[func_num], num_params, functions, PARAMS_FILENAME, output_filename="us_output_seq.txt", runnable_filename="runnable_hessian")                
+                
 
-                # our_times_seq.append(float(ours_single[1]))
-                our_times_par.append(float(ours_hessian[1]))
+                print('starting parallel diff for numthreads 2')
+                os.environ["OMP_NUM_THREADS"] = '2'
+                ours_hessian_2 = us_utils.run_ours(functions[func_num], num_params, functions, PARAMS_FILENAME, output_filename="us_output_par.txt", runnable_filename="runnable_hessian_parallel")
+                
+
+                print('starting parallel diff for numthreads 3')
+                os.environ["OMP_NUM_THREADS"] = '3'
+
+                ours_hessian_3 = us_utils.run_ours(functions[func_num], num_params, functions, PARAMS_FILENAME, output_filename="us_output_par.txt", runnable_filename="runnable_hessian_parallel")
+
+                print('starting parallel diff for numthreads 4')
+                os.environ["OMP_NUM_THREADS"] = '4'
+                ours_hessian_4 = us_utils.run_ours(functions[func_num], num_params, functions, PARAMS_FILENAME, output_filename="us_output_par.txt", runnable_filename="runnable_hessian_parallel")
+
+
+
+                our_times_seq.append(float(ours_single[1]))
+                our_times_par_2.append(float(ours_hessian_2[1]))
+                our_times_par_3.append(float(ours_hessian_3[1]))
+                our_times_par_4.append(float(ours_hessian_4[1]))
 
 
             # print for debug purposes
             print("Parameters: ", params[:10])
-            print("Snapshot of Our Single Results:", ours_single[0][-10:])
+            print("Snapshot of Our Sequential Results:", ours_single[0][-10:])
             print("size of our sequqnetial results: ",len(ours_single[0]))
             # print("Snapshot of Wenzel Single Results:", wenzel_single[0][: 10])
-            print("Snapshot of Our Hessian Results:", ours_hessian[0][-10:])
-            print("size of our parallel results: ",len(ours_hessian[0]))
 
+
+            print("Snapshot of Our parallel Results 2:", ours_hessian_2[0][-10:])
+            print("size of our parallel results: ",len(ours_hessian_2[0]))
+
+            print("Snapshot of Our parallel Results 3:", ours_hessian_3[0][-10:])
+            print("size of our parallel results: ",len(ours_hessian_3[0]))  
+
+            print("Snapshot of Our parallel Results 4:", ours_hessian_4[0][-10:])
+            print("size of our parallel results: ",len(ours_hessian_4[0]))                      
 
             # get the average time
             avg_us_single.append(sum(our_times_seq) / len(our_times_seq))
-            avg_us_hessian.append(sum(our_times_par) / len(our_times_par))
+            avg_us_parallel_2.append(sum(our_times_par_2) / len(our_times_par_2))
+            avg_us_parallel_3.append(sum(our_times_par_3) / len(our_times_par_3))
+            avg_us_parallel_4.append(sum(our_times_par_4) / len(our_times_par_4))
 
             denom.append(num_params)
             
@@ -201,25 +238,36 @@ if __name__ == "__main__":
             print("time: ")
             print(avg_us_single)
             print("parallel:")
-            print(avg_us_hessian)
-            speedup = avg_us_single[-1]/avg_us_hessian[-1]
-            print('speedup: ',speedup)
-            y_op.append(speedup)
+            print(avg_us_parallel_4)
+
+            speedup_2 = avg_us_single[-1]/avg_us_parallel_2[-1]
+            speedup_3 = avg_us_single[-1]/avg_us_parallel_3[-1]
+            speedup_4 = avg_us_single[-1]/avg_us_parallel_4[-1]
+            print('speedup: ',speedup_4)
+            y_op_2.append(speedup_2)
+            y_op_3.append(speedup_3)
+            y_op_4.append(speedup_4)
                 
 
             # generate_graph(avg_us_single, avg_us_hessian, denom, func_num, functions[func_num][0])
 
         # raw_compare_file.close()
-    print(y_op)
+    print(y_op_2)
+    print(y_op_3)
+    print(y_op_4)
     plt.figure(1)
     plt.subplot(211)
-    plt.plot(list(range(50,650,50)), y_op)
-    plt.xticks(list(range(50,650,50)))
+    plt.plot(list(range(start, stop, ts)), y_op_2, label = 'num threads=2')
+    plt.plot(list(range(start, stop, ts)), y_op_3, label = 'num threads=3')
+    plt.plot(list(range(start, stop, ts)), y_op_4, label = 'num threads=4')
+    plt.xticks(list(range(start, stop, ts)))
     plt.title('sequential vs parallel speedup')
     # legend
+    plt.legend(loc="lower right")
+
 
     plt.xlabel('# of iterations = 10, # of params = 100k, constant # of variables (5), x = # of terms')
     plt.ylabel('speedup')
-    plt.savefig('results/graph_parallel.png')
+    plt.savefig('results/graph_parallel_numthreads.png')
     plt.clf()    
   
