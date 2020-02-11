@@ -656,7 +656,8 @@ def grad_without_traversal(ast, x=0):
     if(reverse_diff and second_der):
         c_code = c_generator.CGenerator(filename = output_filename, variable_count = len(variables), derivative_count = (len(variables)*(len(variables)+1))//2, c_code = ccode, ispc = ispc)
     elif (not reverse_diff and second_der): 
-        c_code = c_generator.CGenerator(filename = output_filename, variable_count = len(variables), derivative_count = (len(variables)*(len(variables))), c_code = ccode, ispc = ispc)
+        c_code = c_generator.CGenerator(filename = output_filename, variable_count = len(variables), derivative_count = (len(variables)*(len(variables))), c_code = ccode, 
+            ispc = ispc, split=split_ders, split_index=0, split_by = split_by)
     else:
         c_code = c_generator.CGenerator(filename = output_filename, variable_count = len(variables), derivative_count = len(variables), c_code = ccode, ispc = ispc)
     c_code._make_header()
@@ -800,22 +801,33 @@ def grad_without_traversal(ast, x=0):
                 # print(second_derivative)
                 c_code._generate_expr([primary_base_variable._get(), secondary_base_variable._get()], second_derivative,index=ctr)
                 string = str(i)+','+str(j)
-                dictionary[string] = ctr
+                dictionary[string] = ctr # changed ctr function
                 ctr+=1
+                if  split_ders and  ctr % split_by==0:
+                    tmp = int(ctr//split_by)
+                    print("Splitting file . Producing file ",tmp)
+                    c_code._make_footer()
+                    c_code = c_generator.CGenerator(filename = output_filename, variable_count = len(variables), 
+                        derivative_count = (len(variables)*(len(variables))), c_code = ccode, 
+                        ispc = ispc, split=split_ders, split_index=tmp, split_by = split_by)
+                    c_code._make_header()
+
+
+
         pointer_index = 1   
 
-        for i,vars_ in enumerate(variables):
-            curr_base_variable = Variable(vars_)
-            # print("current base var: ",curr_base_variable. _get())
-            primary_base_variable = Variable(vars_)                
-            for j in range(0,i):
-                vars_second = variables[j]
-                curr_base_variable = Variable(vars_second)
-                secondary_base_variable = Variable(vars_second)
-                string = str(j)+','+str(i)
-                pointer_index = dictionary[string]
-                c_code._generate_copy([primary_base_variable._get(), secondary_base_variable._get()], pointer_index=pointer_index,index=ctr)
-                ctr += 1
+        # for i,vars_ in enumerate(variables):
+        #     curr_base_variable = Variable(vars_)
+        #     # print("current base var: ",curr_base_variable. _get())
+        #     primary_base_variable = Variable(vars_)                
+        #     for j in range(0,i):
+        #         vars_second = variables[j]
+        #         curr_base_variable = Variable(vars_second)
+        #         secondary_base_variable = Variable(vars_second)
+        #         string = str(j)+','+str(i)
+        #         pointer_index = dictionary[string]
+        #         c_code._generate_copy([primary_base_variable._get(), secondary_base_variable._get()], pointer_index=pointer_index,index=ctr)
+        #         ctr += 1
                         
 
     else:
@@ -848,6 +860,7 @@ if __name__ == "__main__":
     parser.add_argument('-second_der', type = str, default = 'False', dest = 'second_der', help='function name')
     parser.add_argument('--output_filename', type = str, default ='c_code', help='file name')    
     parser.add_argument('--nth_der', type = int, help='nth derivative')
+    parser.add_argument('-split_ders', type = str, default = 'True', dest = 'split_ders', help='split the derivative file')
 
 
     parser = parser.parse_args()
@@ -857,6 +870,8 @@ if __name__ == "__main__":
     variables = parser.variables.split(",")
     expression = parser.expr
     output_filename = parser.output_filename
+    split_ders = parser.split_ders
+    split_by = 20
 
     # print(output_filename)
 

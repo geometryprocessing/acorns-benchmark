@@ -11,7 +11,8 @@ class CGenerator(object):
 		uses string accumulation for returning expressions.
 	"""
 
-	def __init__(self, filename = 'c_code', variable_count = 1, derivative_count = 1, ispc = True, c_code = False):
+	def __init__(self, filename = 'c_code', variable_count = 1, derivative_count = 1, ispc = True, c_code = False, split=False, split_index=0,
+		split_by  = 20):
 		self.indent_level = 0
 		self.filename=filename
 		self.variable_count = variable_count # number of variables
@@ -19,8 +20,17 @@ class CGenerator(object):
 		self.count = 0
 		self.ispc = ispc
 		self.c_code = c_code
-		f = open(self.filename+'.txt','w')
-		f.close()
+		self.split = split
+		print(split_index)
+		if self.split:
+			print("opening file : "+self.filename+'{}.txt'.format(split_index))
+			f = open(self.filename+'{}.txt'.format(split_index),'w')
+			f.close()
+		else:
+			f = open(self.filename+'.txt','w')
+			f.close()
+		self.split_by = split_by
+		self.split_index = str(split_index)
 
 	def _make_indent(self):
 		return ' ' * self.indent_level
@@ -29,13 +39,20 @@ class CGenerator(object):
 
 		if self.c_code:
 			ext = '.txt'
-
-			f = open(self.filename+ext,'w')
-			f.write("#include <assert.h>\n#include <time.h>\n#include <math.h>\n#include <stdlib.h>\n#include <stdio.h>\n#include <stdint.h>\n")
-			f.write("void compute(int num_points, double ders[], double grads[], double vjac_it[], double da[], double local_disp[]){\n\n")
-			f.write("int i=0;\n")
-			f.write("\tfor(int p = 0; p < num_points; ++p)\n\t{\n") # iterate over 
-			f.close()
+			if self.split:
+				f = open(self.filename+self.split_index+ext,'w')
+				f.write("#include <assert.h>\n#include <time.h>\n#include <math.h>\n#include <stdlib.h>\n#include <stdio.h>\n#include <stdint.h>\n")
+				f.write("void compute(int num_points, double ders[], double grads[], double vjac_it[], double da[], double local_disp[]){\n\n")
+				f.write("int i=0;\n")
+				f.write("\tfor(int p = 0; p < num_points; ++p)\n\t{\n") # iterate over 
+				f.close()				
+			else:
+				f = open(self.filename+ext,'w')
+				f.write("#include <assert.h>\n#include <time.h>\n#include <math.h>\n#include <stdlib.h>\n#include <stdio.h>\n#include <stdint.h>\n")
+				f.write("void compute(int num_points, double ders[], double grads[], double vjac_it[], double da[], double local_disp[]){\n\n")
+				f.write("int i=0;\n")
+				f.write("\tfor(int p = 0; p < num_points; ++p)\n\t{\n") # iterate over 
+				f.close()
 
 
 
@@ -51,7 +68,10 @@ class CGenerator(object):
 				base = var
 
 			ext = '.txt'		
-			f = open(self.filename+ext,'a')
+			if self.split:
+				f = open(self.filename+self.split_index+ext,'a')
+			else:			
+				f = open(self.filename+ext,'a')
 			f.write("\t\tders[i*"+str(self.derivative_count)+"+"+str(index)+"]"+"+= "+derivative_string+"; // {} \n".format('df/('+base+')'))
 			f.close()					
 		
@@ -140,7 +160,10 @@ class CGenerator(object):
 		if self.c_code:
 
 			ext = '.txt'			
-			f = open(self.filename+ext,'a')
+			if self.split:
+				f = open(self.filename+self.split_index+ext,'a')
+			else:			
+				f = open(self.filename+ext,'a')
 			f.write("\t}\n}\n\n")
 			f.close()
 
@@ -148,7 +171,11 @@ class CGenerator(object):
 			# self._footer_helper('test_case_0_size3')
 
 			
-			f = open(self.filename+ext,'a')
+			if self.split:
+				f = open(self.filename+self.split_index+ext,'a')
+			else:			
+				f = open(self.filename+ext,'a')
+
 			f.write("\n\nint main(int argc, char* argv[]){ %s")
 			# f.write("test_case_0_size3();")
 
