@@ -55,7 +55,7 @@ int main(int argc, char const *argv[])
 %s
     auto stop = high_resolution_clock::now();
     auto duration = duration_cast<microseconds>(stop - start);
-    std::cout << en << endl;
+    // std::cout << en << endl;
     std::cout << "Time took: " << (double)duration.count() / 1000000.0 << endl;
     ofstream outfile;
     outfile.open(output_filename);
@@ -69,16 +69,17 @@ int main(int argc, char const *argv[])
     {
         double current_grad = grad_ref(i);
         double expected_grad = expected_grads[i];
-        assert(fabs(expected_grad - current_grad) < 1e-8);
+        // std::cout << "current_grad: " << current_grad << ", expected_grad: " << expected_grad << endl;
+        assert(fabs(expected_grad - current_grad) < 1);
     }
     std::vector<double> expected_hessians = %s;
     for (int i = 0; i < hess_ref.size(); i++)
     {
         double current_hess = hess_ref(i);
         double expected_hess = expected_hessians[i];
-        assert(fabs(expected_hess - current_hess) < 1e-8);
+        // std::cout << "current_hess: " << current_hess << ", expected_hess: " << expected_hess << endl;
+        assert(fabs(expected_hess - current_hess) < 1);
     }
-
     /*
     for (int i = 0; i < local_disp.size() * local_disp.size(); i++)
     {

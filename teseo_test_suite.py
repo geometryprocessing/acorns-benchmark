@@ -1,4 +1,6 @@
 import os
+import platform
+import json
 import matplotlib.pyplot as plt
 
 params = [
@@ -132,12 +134,8 @@ params = [
     }
 ]
 
-def generate_teseo_cpp_file(params, hess=True, cpp_filename="teseo_hess"):
+def generate_teseo_cpp_file(params, local_disp_size, expected_grads, expected_hessians, static, hess=True, cpp_filename="teseo_hess"):
     cpp_filename = cpp_filename + ".cpp"
-    local_disp_size = get_local_disp_size_from_params(params["local_disp"])
-    expected_grads = convert_ders_str_to_cpp_vector(params['expected_output']['grad'])
-    expected_hessians = convert_ders_str_to_cpp_vector(params['expected_output']['hess'])
-    dynamic = (local_disp_size > 12)
     if hess:
         if dynamic:
             with open('./templates/hess/teseo_dynamic_hessian.txt', 'r') as file:
@@ -209,7 +207,7 @@ def generate_teseo_cpp_file(params, hess=True, cpp_filename="teseo_hess"):
                 teseo_file.close()
 
 def compile_teseo_file(cpp_filename='teseo_hess'):
-    os.system("g++ -DNDEBUG -std=c++11 -I ext/ {}.cpp -o {} -ffast-math -O3".format(cpp_filename, cpp_filename))
+    os.system("g++ -std=c++11 -I ext/ {}.cpp -o {} -ffast-math -O3 -DEIGEN_STACK_ALLOCATION_LIMIT=0".format(cpp_filename, cpp_filename))
 
 def run_teseo_file(cpp_filename):
     os.system("./{}".format(cpp_filename))
@@ -230,20 +228,6 @@ def generate_teseo_ders(local_disp_size):
     ders_count = 0
     count = 0
     grad_string = ""
-    # for i in range(local_disp_size):
-    #     for j in range(local_disp_size):
-    #         if j >= i:
-    #             grad_string += "\t\tders[{}] = hess_ref({});".format(count, ders_count) 
-    #             count += 1
-    #             list_ders.remove(ders_count)
-    #             if i != num_ders - 1:
-    #                 grad_string += "\n"
-    #         ders_count += 1
-    # for i in list_ders:
-    #     grad_string += "\t\tders[{}] = hess({});".format(count, i)
-    #     count += 1
-    #     if i != local_disp_size - 1:
-    #         grad_string += "\n"
     return grad_string
 
 def get_local_disp_size_from_params(local_disp_str):
@@ -254,12 +238,12 @@ def convert_ders_str_to_cpp_vector(ders_str):
     ders_vector = ders_str.replace("[", "{").replace("]", "}").replace(";", ",")
     return ders_vector
 
-def run(params, hess=True):
+def run(params, local_disp_size, expected_grads, expected_hessians, dynamic, hess=True):
     if hess:
         cpp_filename = "teseo_hess"
     else:
         cpp_filename = "teseo_grad"
-    generate_teseo_cpp_file(params, hess=hess, cpp_filename=cpp_filename)
+    generate_teseo_cpp_file(params, local_disp_size, expected_grads, expected_hessians, dynamic, hess=hess, cpp_filename=cpp_filename)
     compile_teseo_file(cpp_filename)
     runtimes = []
     for i in range(10):
@@ -282,13 +266,33 @@ def generate_graph(wenzel_times, denom):
     plt.clf()
 
 if __name__ == "__main__":
-    runtimes = []
+    # runtimes = []
     denom = []
+    output = {}
+    runtimes = []
     for param in params:
-        runtime = run(param, hess=True)
-        runtimes.append(runtime)
+        local_disp_size = get_local_disp_size_from_params(param["local_disp"])
+        expected_grads = convert_ders_str_to_cpp_vector(param['expected_output']['grad'])
+        expected_hessians = convert_ders_str_to_cpp_vector(param['expected_output']['hess'])
+        title = param['title']
+        dynamic = (local_disp_size > 81)
+        avg_runtime = run(param, local_disp_size, expected_grads, expected_hessians, dynamic, hess=True)
+        output[title] = {
+                "avg_runtime": avg_runtime,
+                "local_disp_size": local_disp_size,
+                "dynamic": dynamic,
+                "compile_string": "g++ -std=c++11 -I ext/ filename.cpp -o filename -ffast-math -DEIGEN_STACK_ALLOCATION_LIMIT=0",
+                "os": platform.system()
+        }
+        output_file = open('./results/wenzel/hess/{}.json'.format(title), "w+")
+        output_file.write(json.dumps(output[title], indent=4, sort_keys=True))
+        output_file.close()
+        runtimes.append(avg_runtime)
         denom.append(len(param['local_disp']))
-
+    final_output = open('./results/wenzel/hess/final_results.json'.format(title), "w+")
+    json_output = json.dumps(output, indent=4, sort_keys=True)
+    final_output.write(json_output)
+    final_output.close()
     generate_graph(runtimes, denom)
     
     print(runtimes)

@@ -1,0 +1,58 @@
+{
+    "2D_P1-non_zero_wenzel": {
+        "avg_runtime": 0.0053319,
+        "compile_string": "g++ -std=c++11 -I ext/ filename.cpp -o filename -ffast-math -DEIGEN_STACK_ALLOCATION_LIMIT=0",
+        "dynamic": false,
+        "local_disp_size": 6,
+        "os": "Linux"
+    },
+    "2D_P1_zero": {
+        "avg_runtime": 0.0007359999999999999,
+        "compile_string": "g++ -std=c++11 -I ext/ filename.cpp -o filename -ffast-math -DEIGEN_STACK_ALLOCATION_LIMIT=0",
+        "dynamic": false,
+        "local_disp_size": 6,
+        "os": "Linux"
+    },
+    "2D_P2_non_zero": {
+        "avg_runtime": 0.0018253000000000002,
+        "compile_string": "g++ -std=c++11 -I ext/ filename.cpp -o filename -ffast-math -DEIGEN_STACK_ALLOCATION_LIMIT=0",
+        "dynamic": false,
+        "local_disp_size": 12,
+        "os": "Linux"
+    },
+    "3D_P1_non_zero": {
+        "avg_runtime": 0.0018728999999999998,
+        "compile_string": "g++ -std=c++11 -I ext/ filename.cpp -o filename -ffast-math -DEIGEN_STACK_ALLOCATION_LIMIT=0",
+        "dynamic": false,
+        "local_disp_size": 12,
+        "os": "Linux"
+    },
+    "3D_P2_non_zero": {
+        "avg_runtime": 0.013872099999999998,
+        "compile_string": "g++ -std=c++11 -I ext/ filename.cpp -o filename -ffast-math -DEIGEN_STACK_ALLOCATION_LIMIT=0",
+        "dynamic": false,
+        "local_disp_size": 30,
+        "os": "Linux"
+    },
+    "3D_P2_zero": {
+        "avg_runtime": 0.0118195,
+        "compile_string": "g++ -std=c++11 -I ext/ filename.cpp -o filename -ffast-math -DEIGEN_STACK_ALLOCATION_LIMIT=0",
+        "dynamic": false,
+        "local_disp_size": 30,
+        "os": "Linux"
+    },
+    "3D_P3_non-zero": {
+        "avg_runtime": 0.0764878,
+        "compile_string": "g++ -std=c++11 -I ext/ filename.cpp -o filename -ffast-math -DEIGEN_STACK_ALLOCATION_LIMIT=0",
+        "dynamic": false,
+        "local_disp_size": 60,
+        "os": "Linux"
+    },
+    "3D_P4_non-zero": {
+        "avg_runtime": 5.495942999999999,
+        "compile_string": "g++ -std=c++11 -I ext/ filename.cpp -o filename -ffast-math -DEIGEN_STACK_ALLOCATION_LIMIT=0",
+        "dynamic": true,
+        "local_disp_size": 105,
+        "os": "Linux"
+    }
+}

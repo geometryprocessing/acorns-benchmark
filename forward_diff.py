@@ -861,6 +861,7 @@ if __name__ == "__main__":
     parser.add_argument('--output_filename', type = str, default ='c_code', help='file name')    
     parser.add_argument('--nth_der', type = int, help='nth derivative')
     parser.add_argument('-split_ders', type = str, default = 'True', dest = 'split_ders', help='split the derivative file')
+    parser.add_argument('-split_by', type = int, default = 20, dest = 'split_by', help='the number of ders per file')
 
 
     parser = parser.parse_args()
@@ -871,7 +872,7 @@ if __name__ == "__main__":
     expression = parser.expr
     output_filename = parser.output_filename
     split_ders = parser.split_ders
-    split_by = 20
+    split_by = parser.split_by
 
     # print(output_filename)
 

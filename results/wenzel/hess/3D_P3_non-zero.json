@@ -1,0 +1,7 @@
+{
+    "avg_runtime": 0.0764878,
+    "compile_string": "g++ -std=c++11 -I ext/ filename.cpp -o filename -ffast-math -DEIGEN_STACK_ALLOCATION_LIMIT=0",
+    "dynamic": false,
+    "local_disp_size": 60,
+    "os": "Linux"
+}

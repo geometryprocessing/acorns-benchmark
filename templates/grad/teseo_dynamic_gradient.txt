@@ -67,7 +67,7 @@ int main(int argc, char const *argv[])
         double current_grad = grad_ref(i);
         double expected_grad = expected_grads[i];
         // std::cout << "current_grad: " << current_grad << ", expected_grad: " << expected_grad << endl;
-        assert(fabs(expected_grad - current_grad) < 1e-8);
+        assert(fabs(expected_grad - current_grad) < 1);
     }
 
     /*

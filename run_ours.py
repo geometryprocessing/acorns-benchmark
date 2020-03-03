@@ -143,9 +143,12 @@ def create_local_disp_string(local_disps):
             local_disp_string += (",")
     return local_disp_string
 
-def get_runtime_from_file(title, hess=True):
+def get_runtime_from_file(title, split_index, hess=True):
     if hess:
-        filename = "./results/us/hess/{}.txt".format(title)
+        if split_index != -1:
+            filename = "./results/us/hess/{}{}.txt".format(title, split_index)
+        else:
+            filename = "./results/us/hess/{}.txt".format(title, split_index)
     else:
         filename = "./results/wenzel/grad/{}_grad.txt".format(title)
     f = open(filename, "r")
@@ -155,6 +158,7 @@ def get_runtime_from_file(title, hess=True):
 
 import math
 print("starting..")
+generate_runnables = False
 print(datetime.datetime.now())
 avg_runtimes = []
 for param in params[0:]:
@@ -162,7 +166,7 @@ for param in params[0:]:
     
     name = param['title']
     num_local_disp = len(param['local_disp'].split(','))
-    num_files = math.ceil((num_local_disp*(num_local_disp-1))/2/split_by)
+    num_files = int(math.ceil((num_local_disp*(num_local_disp-1))/2/split_by))
 
     print("doing {}".format(name))
     da = eval(param['da'].replace("{", "[").replace("}", "]"))
@@ -170,85 +174,84 @@ for param in params[0:]:
     vjac_it = eval(param['vjac_it'].replace("{", "[").replace("}", "]"))
     size = int(len(grads) / len(da) / 3)
     local_disps = eval(param['local_disp'].replace("{", "[").replace("}", "]"))
-    with open('./templates/us/function_template.txt', 'r') as file:
-        us = file.read()
-        cpp_code = us % (str(size))
-        output_file = open('./our_der_files/original_c_files/{}.c'.format(name), "w+")
-        output_file.write(cpp_code)
-        output_file.close()
-    os.system('python3 fun_visit.py ./our_der_files/original_c_files/{}.c ./our_der_files/function_c_files/output_{}'.format(name, name))
 
-    local_disp_string = create_local_disp_string(local_disps)
+    if generate_runnables:
+        with open('./templates/us/function_template.txt', 'r') as file:
+            us = file.read()
+            cpp_code = us % (str(size))
+            output_file = open('./our_der_files/original_c_files/{}.c'.format(name), "w+")
+            output_file.write(cpp_code)
+            output_file.close()
+        os.system('python3 fun_visit.py ./our_der_files/original_c_files/{}.c ./our_der_files/function_c_files/output_{}'.format(name, name))
 
-    os.system('python3 forward_diff.py our_der_files/function_c_files/output_{}.c energy -ccode True --vars {} -func function_0 -second True -split_ders {} --output_filename ./our_der_files/der_c_files/derivative_{}'.format(name, local_disp_string, split_ders, name))
+        local_disp_string = create_local_disp_string(local_disps)
 
-
-    num_points = len(local_disp_eval) * len(local_disp_eval)
-
+        os.system('python3 forward_diff.py our_der_files/function_c_files/output_{}.c energy -ccode True --vars {} -func function_0 -second True -split_ders {} --output_filename ./our_der_files/der_c_files/derivative_{}'.format(name, local_disp_string, split_ders, name))
 
 
+        num_points = len(local_disp_eval) * len(local_disp_eval)
+
+        if  split_ders:
+            for split_index in range(num_files):
+                with open('./our_der_files/der_c_files/derivative_{}{}.txt'.format(name,  split_index), 'r') as file:
+                    us = file.read()
 
 
-    runnable_string_replace = """
-        int num_points = {};
-        int ders_size = {};
-        double ders[ders_size];
-        double local_disp[{}] = {};
-        double grads[{}] = {};
-        double vjac_it[{}] = {};
-        double da[{}] = {};
-    """.format(len(da), num_points, len(local_disp_eval), param['local_disp'], len(grads), param['grads'], len(vjac_it), param['vjac_it'], len(da), param['da'])
+                    runnable_string_replace = """
+                        int num_points = {};
+                        int ders_size = {};
+                        double ders[ders_size];
+                        double local_disp[{}] = {};
+                        double grads[{}] = {};
+                        double vjac_it[{}] = {};
+                        double da[{}] = {};
+                    """.format(len(da), num_points, len(local_disp_eval), param['local_disp'], len(grads), param['grads'], len(vjac_it), param['vjac_it'], len(da), param['da'])
+
+                    runnable_string_replace += """
+
+                        struct timespec tstart={0,0}, tend={0,0};
+                        clock_gettime(CLOCK_MONOTONIC, &tstart);
+                        compute(num_points, &ders, &grads, &vjac_it, &da, &local_disp);
+                        clock_gettime(CLOCK_MONOTONIC, &tend);
+                        double delta = ((double)tend.tv_sec + 1.0e-9*tend.tv_nsec) - ((double)tstart.tv_sec + 1.0e-9*tstart.tv_nsec); // seconds
+
+                        FILE *fp;
+                    """
+
+                    runnable_string_replace += """
+
+                        fp = fopen("./results/us/hess/{}{}.txt", "w+");
+                    """.format(name, split_index)        
+
+                    runnable_string_replace += """
+                        printf("%f ", delta);
+                        fprintf(fp, "%f ", delta);
 
 
+                        for(int i = 0; i < ders_size; i++) {
+                            fprintf(fp, "%f ", ders[i]);
+                            printf("%f ", ders[i]);
+                        }
+                        fclose(fp);
+                        return 0;
+                    """
+
+                    cpp_code = us % (runnable_string_replace)
+                    output_file = open('./our_der_files/runnable_files/{}{}.c'.format(name, split_index), "w+")
+                    output_file.write(cpp_code)
+                    output_file.close()
 
 
-    runnable_string_replace += """
-
-        struct timespec tstart={0,0}, tend={0,0};
-        clock_gettime(CLOCK_MONOTONIC, &tstart);
-        compute(num_points, &ders, &grads, &vjac_it, &da, &local_disp);
-        clock_gettime(CLOCK_MONOTONIC, &tend);
-        double delta = ((double)tend.tv_sec + 1.0e-9*tend.tv_nsec) - ((double)tstart.tv_sec + 1.0e-9*tstart.tv_nsec); // seconds
-
-        FILE *fp;
-    """
-
-    runnable_string_replace += """
-
-        fp = fopen("./results/us/hess/{}.txt", "w+");
-    """.format(name)        
-
-    runnable_string_replace += """
-        printf("%f ", delta);
-        fprintf(fp, "%f ", delta);
-
-
-        for(int i = 0; i < ders_size; i++) {
-            fprintf(fp, "%f ", ders[i]);
-        }
-        fclose(fp);
-        return 0;
-    """
-
-    if  split_ders:
-        for split_index in range(num_files):
-            with open('./our_der_files/der_c_files/derivative_{}{}.txt'.format(name,  split_index), 'r') as file:
+        else:
+            with open('./our_der_files/der_c_files/derivative_{}.txt'.format(name), 'r') as file:
                 us = file.read()
                 cpp_code = us % (runnable_string_replace)
-                output_file = open('./our_der_files/runnable_files/{}{}.c'.format(name, split_index), "w+")
+                output_file = open('./our_der_files/runnable_files/{}.c'.format(name), "w+")
                 output_file.write(cpp_code)
                 output_file.close()
 
-
-    else:
-        with open('./our_der_files/der_c_files/derivative_{}.txt'.format(name), 'r') as file:
-            us = file.read()
-            cpp_code = us % (runnable_string_replace)
-            output_file = open('./our_der_files/runnable_files/{}.c'.format(name), "w+")
-            output_file.write(cpp_code)
-            output_file.close()
-
     if  split_ders:
+        per_der_runtimes = []
         for split_index in range(num_files):
             print("compiling...")
             print(datetime.datetime.now())
@@ -258,23 +261,32 @@ for param in params[0:]:
             results = []
             for i in range(10):
                 os.system("./our_der_files/runnable_files/{}{}".format(name, split_index))
-                results.append(get_runtime_from_file(name))        
+                results.append(get_runtime_from_file(name, split_index=split_index))
+            avg_runtime = float( sum(results) / len(results) )
+            per_der_runtimes.append(avg_runtime)
+        avg_runtime = sum(per_der_runtimes)
+
     else:
         print("compiling...")
         print(datetime.datetime.now())
-        os.system("gcc -O3 -ffast-math -o ./our_der_files/runnable_files/{} ./our_der_files/runnable_files/{}.c -lm".format(name, name))
+        # os.system("gcc -O3 -ffast-math -o ./our_der_files/runnable_files/{} ./our_der_files/runnable_files/{}.c -lm".format(name, name))
         print("running...")
         print(datetime.datetime.now())
         results = []
         for i in range(10):
             os.system("./our_der_files/runnable_files/{}".format(name))
-            results.append(get_runtime_from_file(name))
-    avg_runtime = float( sum(results) / len(results) )
+            results.append(get_runtime_from_file(name, split_index=-1))
+        avg_runtime = float( sum(results) / len(results) )
+
 
     avg_runtimes.append(avg_runtime)
     break
 
-print(avg_runtimes)
+avg_runtimes_str = " ".join(str(x) for x in avg_runtimes)
+runtime_file = open("./results/us/times/runtimes.txt", "w+")
+runtime_file.write(avg_runtimes_str)
+runtime_file.close()
+print(avg_runtimes_str)
 
 
 

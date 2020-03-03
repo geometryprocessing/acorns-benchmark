@@ -1,0 +1,17 @@
+{
+    "avg_runtime": 0.0002582,
+    "dynamic": false,
+    "local_disp_size": 12,
+    "os": "Linux",
+    "per_file_compile_times": [
+        8.513553142547607,
+        8.57174563407898,
+        8.402616500854492,
+        8.088703393936157,
+        4.997256755828857
+    ],
+    "speedup": "7.253679318357862x",
+    "total_compile_time": 38.573875427246094,
+    "total_file_generation_time": -1,
+    "wenzel_runtime": "0.0018728999999999998"
+}
