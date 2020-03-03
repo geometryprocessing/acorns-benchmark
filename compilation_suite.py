@@ -153,9 +153,9 @@ def create_local_disp_string(local_disps):
 def get_runtime_from_file(title, split_index=-1, split_by=-1, hess=True):
     if hess:
         if split_index != -1:
-            filename = "./compilation_tests/results/us/hess/{}/{}/{}{}.txt".format(title, split_by, title, split_index)
+            filename = "./compilation_tests/results/{}/{}/{}{}.txt".format(title, split_by, title, split_index)
         else:
-            filename = "./compilation_tests/results/us/hess/{}.txt".format(title, split_index)
+            filename = "./compilation_tests/results/{}.txt".format(title, split_index)
     else:
         filename = "./compilation_tests/results/wenzel/grad/{}_grad.txt".format(title)
     f = open(filename, "r")
@@ -193,7 +193,7 @@ if __name__ == "__main__":
     avg_runtimes = []
     output = {}
 
-    for param in params[1:2]:
+    for param in params[1:]:
         name = param['title']
 
         if not os.path.exists("./compilation_tests/der_c_files/{}".format(name)):
@@ -285,7 +285,7 @@ if __name__ == "__main__":
 
                         runnable_string_replace += """
 
-                            fp = fopen("./compilation_tests/results/us/hess/{}/{}/{}{}.txt", "w+");
+                            fp = fopen("./compilation_tests/results/{}/{}/{}{}.txt", "w+");
                         """.format(name, split_by, name, split_index)        
 
                         runnable_string_replace += """
@@ -310,7 +310,7 @@ if __name__ == "__main__":
 
             args = [(name, split_by, i) for i in range(num_files)]
             result = None
-            with mp.Pool(processes=num_cores) as pool:
+            with mp.Pool(processes=int(num_cores/2)) as pool:
                 result = pool.starmap(compile, args)
             per_file_compile_times = [res[0] for res in result]
             per_der_runtimes = [res[1] for res in result]
