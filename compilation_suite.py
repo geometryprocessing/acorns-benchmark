@@ -186,14 +186,22 @@ if __name__ == "__main__":
         teseo_data = json.load(json_file)
 
     print("starting..")
-    generate_runnables = False
+    generate_runnables = True
 
 
     print(datetime.datetime.now())
     avg_runtimes = []
     output = {}
 
-    for param in params:
+    for param in params[1:2]:
+        name = param['title']
+
+        if not os.path.exists("./compilation_tests/der_c_files/{}".format(name)):
+            os.mkdir("./compilation_tests/der_c_files/{}".format(name))
+        if not os.path.exists("./compilation_tests/runnable_c_files/{}".format(name)):
+            os.mkdir("./compilation_tests/runnable_c_files/{}".format(name))
+        if not os.path.exists("./compilation_tests/results/{}".format(name)):
+            os.mkdir("./compilation_tests/results/{}".format(name))
 
         avg_compile_times = []
         file_creation_times_list = []
@@ -205,7 +213,6 @@ if __name__ == "__main__":
 
                     
         grads = eval(param['grads'].replace("{", "[").replace("}", "]"))
-        name = param['title']
         output[name] = {}
         num_local_disp = len(param['local_disp'].split(','))
 
@@ -220,6 +227,13 @@ if __name__ == "__main__":
         prev_num_files = 0
 
         for split_by in split_by_list: 
+
+            if not os.path.exists("./compilation_tests/der_c_files/{}/{}".format(name, split_by)):
+                os.mkdir("./compilation_tests/der_c_files/{}/{}".format(name, split_by))
+            if not os.path.exists("./compilation_tests/runnable_c_files/{}/{}".format(name, split_by)):
+                os.mkdir("./compilation_tests/runnable_c_files/{}/{}".format(name, split_by))
+            if not os.path.exists("./compilation_tests/results/{}/{}".format(name, split_by)):
+                os.mkdir("./compilation_tests/results/{}/{}".format(name, split_by))
 
             num_files = int(math.ceil((num_local_disp*(num_local_disp-1))/2/split_by))
 
@@ -238,7 +252,7 @@ if __name__ == "__main__":
 
                 local_disp_string = create_local_disp_string(local_disps)
 
-                os.system('python3 forward_diff.py compilation_tests/function_c_files/output_{}.c energy -ccode True --vars {} -func function_0 -second True -split_ders {} -split_by {} --output_filename ./compilation_tests/der_c_files/{}/{}/derivative_{}'.format(name, local_disp_string, split_ders, split_by, name, split_by, name))
+                os.system('python3 forward_diff.py ./compilation_tests/function_c_files/output_{}.c energy -ccode True --vars {} -func function_0 -second True -split_ders {} -split_by {} --output_filename ./compilation_tests/der_c_files/{}/{}/derivative_{}'.format(name, local_disp_string, split_ders, split_by, name, split_by, name))
 
 
                 num_points = len(local_disp_eval) * len(local_disp_eval)
@@ -291,7 +305,7 @@ if __name__ == "__main__":
                         output_file.close()
                         file_creation_end = time.time()
         
-            total_file_creation_time = -1 # float(file_creation_end - file_generation_start)        
+            total_file_creation_time = float(file_creation_end - file_generation_start)        
             split_to_total_file_creation_times[split_by] = total_file_creation_time
 
             args = [(name, split_by, i) for i in range(num_files)]
