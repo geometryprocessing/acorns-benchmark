@@ -13,6 +13,7 @@ import enoki_utils
 import pytorch_utils
 import wenzel_utils
 import us_utils
+
 def generate_params(num_params, function_num):
     print("Generating params for function_num", function_num) #, " which is: ", functions[function_num][0])
     num_variables = len(functions[function_num][1])

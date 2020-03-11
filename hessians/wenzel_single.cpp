@@ -40,8 +40,8 @@ int main(int argc, char **argv)
    {
        /* There are two independent variables */
        DiffScalarBase::setVariableCount(9);
-		DScalar b(0, args[index * 9 + 0]), F(1, args[index * 9 + 1]), w(2, args[index * 9 + 2]), V(3, args[index * 9 + 3]), Q(4, args[index * 9 + 4]), B(5, args[index * 9 + 5]), n(6, args[index * 9 + 6]), c(7, args[index * 9 + 7]), R(8, args[index * 9 + 8]);
-		DScalar Fx = 4*4*4*4*4*4*4*4*4*((b * (1 - b))*(F * (1 - F))*(w * (1 - w))*(V * (1 - V))*(Q * (1 - Q))*(B * (1 - B))*(n * (1 - n))*(c * (1 - c))*(R * (1 - R)));
+		DScalar d(0, args[index * 9 + 0]), E(1, args[index * 9 + 1]), J(2, args[index * 9 + 2]), c(3, args[index * 9 + 3]), x(4, args[index * 9 + 4]), X(5, args[index * 9 + 5]), u(6, args[index * 9 + 6]), O(7, args[index * 9 + 7]), P(8, args[index * 9 + 8]);
+		DScalar Fx = 4*4*4*4*4*4*4*4*4*((d * (1 - d))*(E * (1 - E))*(J * (1 - J))*(c * (1 - c))*(x * (1 - x))*(X * (1 - X))*(u * (1 - u))*(O * (1 - O))*(P * (1 - P)));
 		ders[index * 9 + 0] = Fx.getGradient()(0);
 		ders[index * 9 + 1] = Fx.getGradient()(1);
 		ders[index * 9 + 2] = Fx.getGradient()(2);

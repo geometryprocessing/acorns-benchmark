@@ -5,7 +5,7 @@
 #
 #------------------------------------------------------------------------------
 import math
-from sympy import *
+# from sympy import *
 
 class CGenerator(object):
 	"""Writes a file with C code, hardcoded function definitions,
