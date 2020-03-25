@@ -57,7 +57,7 @@ class CGenerator(object):
 
 
 
-	def _generate_expr(self, var, derivative_string, index):
+	def _generate_expr(self, var, derivative_string, index, mirrored_index=None):
 
 		if self.c_code:
 
@@ -73,6 +73,8 @@ class CGenerator(object):
 			else:			
 				f = open(self.filename+ext,'a')
 			f.write("\t\tders[i*"+str(self.derivative_count)+"+"+str(index)+"]"+"+= "+derivative_string+"; // {} \n".format('df/('+base+')'))
+			if index != mirrored_index and mirrored_index:
+				f.write("\t\tders[i*"+str(self.derivative_count)+"+"+str(mirrored_index)+"]"+"= ders[i*"+str(self.derivative_count)+"+"+str(index)+"]; // {} \n".format('df/('+base+')'))
 			f.close()					
 		
 

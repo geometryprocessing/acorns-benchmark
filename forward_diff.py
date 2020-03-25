@@ -778,6 +778,12 @@ def grad_without_traversal(ast, x=0):
     elif second_der:
         ctr=0
         dictionary = {}
+
+
+        # matrix size: i x j
+        # matrix size flattened : i*j values
+
+
         for i,vars_ in enumerate(variables):
             curr_base_variable = Variable(vars_)
             # print("current base var: ",curr_base_variable. _get())
@@ -799,9 +805,14 @@ def grad_without_traversal(ast, x=0):
                 second_derivative = Expr(new_ast.ext[0].init)._forward_diff()
                 print("[{},{} / {}] Second derivative : df / d{} d{}:".format(i,j,len(variables),vars_, vars_second))
                 # print(second_derivative)
-                c_code._generate_expr([primary_base_variable._get(), secondary_base_variable._get()], second_derivative,index=ctr)
                 string = str(i)+','+str(j)
                 dictionary[string] = ctr # changed ctr function
+
+                flattened_mat_idx = i*len(variables) + j
+                flattened_mat_idx_mirror = i + j*len(variables)
+
+                c_code._generate_expr([primary_base_variable._get(), secondary_base_variable._get()], second_derivative,index = flattened_mat_idx, mirrored_index = flattened_mat_idx_mirror)
+
                 ctr+=1
                 if  split_ders and  ctr % split_by==0:
                     tmp = int(ctr//split_by)
@@ -870,7 +881,6 @@ if __name__ == "__main__":
     variables = parser.variables.split(",")
     expression = parser.expr
     output_filename = parser.output_filename
-    split_ders = parser.split_ders
     split_by = 20
 
     # print(output_filename)
@@ -897,6 +907,13 @@ if __name__ == "__main__":
         second_der = True
     else:
         second_der = False
+
+
+
+    if parser.split_ders == 'True':
+        split_ders = True
+    else:
+        split_ders = False        
 
 
     print("CCODE: ",ccode)
