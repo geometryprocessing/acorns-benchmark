@@ -267,6 +267,7 @@ def run(params, hess=True):
         print(params['title'])
         runtimes.append(get_runtime_from_file(params['title'], hess=hess))
     avg = sum(runtimes) / float(len(runtimes))
+    print("run time avg : ",avg)
     return avg
 
 def generate_graph(wenzel_times, denom):
@@ -284,11 +285,11 @@ def generate_graph(wenzel_times, denom):
 if __name__ == "__main__":
     runtimes = []
     denom = []
-    for param in params:
+    for param in params[3:]:
         runtime = run(param, hess=True)
         runtimes.append(runtime)
         denom.append(len(param['local_disp']))
-
+        break
     generate_graph(runtimes, denom)
     
     print(runtimes)

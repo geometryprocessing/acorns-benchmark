@@ -213,7 +213,7 @@ for param in params[0:]:
         clock_gettime(CLOCK_MONOTONIC, &tstart);
         compute(num_points, &ders, &grads, &vjac_it, &da, &local_disp, mu, lambda);
 
-        energy = forward(num_points, energy, &grads, &vjac_it, &da, &local_disp, mu, lambda);
+        // energy = forward(num_points, energy, &grads, &vjac_it, &da, &local_disp, mu, lambda);
 
 
         clock_gettime(CLOCK_MONOTONIC, &tend);
@@ -231,11 +231,11 @@ for param in params[0:]:
         printf("%f ", delta);
 
 
-        printf("%f ", energy);
+        //printf("%f ", energy);
 
 
         fprintf(fp, "%f ", delta);
-        fprintf(fp, "%f ", energy);
+        //fprintf(fp, "%f ", energy);
 
 
 
