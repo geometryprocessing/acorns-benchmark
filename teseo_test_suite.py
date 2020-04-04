@@ -209,7 +209,7 @@ def generate_teseo_cpp_file(params, hess=True, cpp_filename="teseo_hess"):
                 teseo_file.close()
 
 def compile_teseo_file(cpp_filename='teseo_hess'):
-    os.system("g++ -DNDEBUG -std=c++11 -I ext/ {}.cpp -o {} -ffast-math -O3".format(cpp_filename, cpp_filename))
+    os.system("g++ -std=c++11 -I ext/ {}.cpp -o {} -ffast-math -O3".format(cpp_filename, cpp_filename))
 
 def run_teseo_file(cpp_filename):
     os.system("./{}".format(cpp_filename))
