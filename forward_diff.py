@@ -263,7 +263,7 @@ class Add(Expr):
             # print("Add unary op")
             # print(cur_node.ast.expr)
             return "("+Expr(cur_node.ast.expr).eval()+")"
-        temp= "("+Expr(cur_node.ast.left, 'addition left').eval() + " + " + Expr(cur_node.ast.right,'addition right').eval()+")"
+        temp= "(("+Expr(cur_node.ast.left, 'addition left').eval() + ") + (" + Expr(cur_node.ast.right,'addition right').eval()+"))"
         # print(temp)
         return temp
 
@@ -298,11 +298,11 @@ class Subtract(Expr):
             # print("Unary opppppp")
             # print(cur_node.ast.expr)
             return "( -("+Expr(cur_node.ast.expr).eval()+"))"
-        return "("+Expr(cur_node.ast.left).eval() + " - " + Expr(cur_node.ast.right).eval()+")"
+        return "(("+Expr(cur_node.ast.left).eval() + ") - (" + Expr(cur_node.ast.right).eval()+"))"
 
     def _forward_diff(self,cur_node):
         if cur_node.type == 'UnaryOp':
-            return "(-("+Expr(cur_node.ast.expr)._forward_diff()+"))"
+            return "(-1*("+Expr(cur_node.ast.expr)._forward_diff()+"))"
         return "(" + "(" + Expr(cur_node.ast.left)._forward_diff()+")" + " - " + "("+Expr(cur_node.ast.right)._forward_diff()+")"+")"
 
 
@@ -312,7 +312,7 @@ class Subtract(Expr):
         # print(adjoint)
         # print(grad)        
         Expr(cur_node.ast.left)._reverse_diff(adjoint, grad)
-        Expr(cur_node.ast.right)._reverse_diff("-1*(" + adjoint+")", grad)
+        Expr(cur_node.ast.right)._reverse_diff("-1.0*(" + adjoint+")", grad)
 
 
 
@@ -323,7 +323,7 @@ class Multiply(Expr):
         # print("evaluating multiplication, printing left tree:",cur_node.ast)
         # print("left eval: ",Expr(cur_node.ast.left).eval())
         # print("right eval: ",Expr(cur_node.ast.right).eval())
-        return "("+Expr(cur_node.ast.left).eval() + " * " + Expr(cur_node.ast.right).eval()+")"
+        return "(("+Expr(cur_node.ast.left).eval() + ") * (" + Expr(cur_node.ast.right).eval()+"))"
 
     def _forward_diff(self,cur_node):
         lhs = Expr(cur_node.ast.left).eval() # Needs to be a string
@@ -331,8 +331,8 @@ class Multiply(Expr):
         # cur_node.ast.show() 
 
 
-        return "(" + rhs+ " * " + "("+Expr(cur_node.ast.left,'multiplication left')._forward_diff()+")" + " + " \
-                        + lhs+ " * " + "("+Expr(cur_node.ast.right,'multiplication right')._forward_diff() +")" +")" 
+        return "((" + rhs+ ") * " + "("+Expr(cur_node.ast.left,'multiplication left')._forward_diff()+")" + " + (" \
+                        + lhs+ ") * " + "("+Expr(cur_node.ast.right,'multiplication right')._forward_diff() +")" +")" 
 
     def _reverse_diff(self, cur_node, adjoint, grad):
         # print("MULTIPLY:")
@@ -355,7 +355,7 @@ class Divide(Expr):
         # print(Expr(cur_node.ast.left).eval())
         # print(cur_node.ast.right)
         # print(Expr(cur_node.ast.right).eval())
-        return "("+Expr(cur_node.ast.left).eval() + " / " + Expr(cur_node.ast.right).eval()+")"
+        return "(("+Expr(cur_node.ast.left).eval() + ") / (" + Expr(cur_node.ast.right).eval()+"))"
 
     def _forward_diff(self,cur_node):
         # print("FORWARD DIFF THROUGH DIVIDION")
@@ -363,8 +363,8 @@ class Divide(Expr):
         lhs = Expr(cur_node.ast.left).eval()
         # print("lhs: ",lhs)
         rhs = Expr(cur_node.ast.right).eval()
-        return "(" +rhs+ " * " +Expr(cur_node.ast.left,'division left')._forward_diff() + " - " \
-                        + lhs+ " * " +Expr(cur_node.ast.right,'division right')._forward_diff()+")" + "/ (" + rhs + " * " + rhs+")"
+        return "(((" +rhs+ ") * (" +Expr(cur_node.ast.left,'division left')._forward_diff() + ")) - ((" \
+                        + lhs+ ") * (" +Expr(cur_node.ast.right,'division right')._forward_diff()+")))" + "/ (" + rhs + " * " + rhs+")"
 
     def _reverse_diff(self, cur_node, adjoint, grad):
         # print("DIVIDE:")
@@ -374,7 +374,7 @@ class Divide(Expr):
         lhs = Expr(cur_node.ast.left).eval()
         rhs = Expr(cur_node.ast.right).eval()
         Expr(cur_node.ast.left)._reverse_diff("("+ adjoint + ")" + "/" + "("+ rhs + ")", grad)
-        Expr(cur_node.ast.right)._reverse_diff("(-1*("+adjoint +") * ("+ lhs + "))/((" + rhs + ") * (" + rhs+"))", grad)        
+        Expr(cur_node.ast.right)._reverse_diff("(-1.0*("+adjoint +") * ("+ lhs + "))/((" + rhs + ") * (" + rhs+"))", grad)        
 
 
 
@@ -399,7 +399,7 @@ class Log(Expr):
             exp_eval = Expr(cur_node.ast.args.exprs[0]).eval()
             exp = cur_node.ast.args.exprs[0]
 
-        return "(1/("+ exp_eval +")*"+Expr(exp,"LOG BIATCH")._forward_diff()+")"
+        return "(1.0/("+ exp_eval +")*("+Expr(exp,"LOG BIATCH")._forward_diff()+"))"
 
     def _reverse_diff(self, cur_node, adjoint, grad):
         exp = cur_node.ast.args.exprs[0].name
@@ -505,7 +505,6 @@ class Cosine(Expr):
     def _reverse_diff(self, cur_node, adjoint, grad):
         exp = cur_node.ast.args.exprs[0].name
         Expr(exp)._reverse_diff("(" + adjoint + ") * "+" (-1*sin("+exp+"))", grad)           
-
 
 
 def show_attrs(node):    
@@ -630,6 +629,12 @@ def expand_equation(equation, dict_):
 
     return equation
 
+
+
+
+
+
+
 def grad_without_traversal(ast, x=0):
     """
     Returns a function which computes gradient of `fun` with respect to
@@ -700,10 +705,15 @@ def grad_without_traversal(ast, x=0):
 
     # print("Expanded equation:")
 
-    # fun.show()    
+    fun.show()    
 
 
-    # print(Expr(fun).eval())
+
+    evaluated = simplify_equation(Expr(fun).eval())
+
+
+  
+
     # print("done")
 
     grad = {}
@@ -850,6 +860,14 @@ def grad_without_traversal(ast, x=0):
             c_code._generate_expr(curr_base_variable._get(), derivative,index=i)        
 
     c_code._make_footer()
+
+
+    c_code._make_header_forward()
+    c_code._generate_expr_forward(evaluated)
+
+    c_code._make_footer_forward()  
+
+    c_code._write_main()    
         
 
 if __name__ == "__main__":
@@ -930,3 +948,4 @@ if __name__ == "__main__":
     #     ast.ext[0].body.block_items[0].show()
     #     simplify_graph(ast.ext[0].body.block_items[0])
     grad_without_traversal(ast)
+

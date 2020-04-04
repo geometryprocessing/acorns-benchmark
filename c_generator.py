@@ -42,19 +42,27 @@ class CGenerator(object):
 			if self.split:
 				f = open(self.filename+self.split_index+ext,'w')
 				f.write("#include <assert.h>\n#include <time.h>\n#include <math.h>\n#include <stdlib.h>\n#include <stdio.h>\n#include <stdint.h>\n")
-				f.write("void compute(int num_points, double ders[], double grads[], double vjac_it[], double da[], double local_disp[]){\n\n")
+				f.write("void compute(int num_points, double ders[], double grads[], double vjac_it[], double da[], double local_disp[], double mu, double lambda){\n\n")
 				f.write("int i=0;\n")
 				f.write("\tfor(int p = 0; p < num_points; ++p)\n\t{\n") # iterate over 
 				f.close()				
 			else:
 				f = open(self.filename+ext,'w')
 				f.write("#include <assert.h>\n#include <time.h>\n#include <math.h>\n#include <stdlib.h>\n#include <stdio.h>\n#include <stdint.h>\n")
-				f.write("void compute(int num_points, double ders[], double grads[], double vjac_it[], double da[], double local_disp[]){\n\n")
+				f.write("void compute(int num_points, double ders[], double grads[], double vjac_it[], double da[], double local_disp[], double mu, double lambda){\n\n")
 				f.write("int i=0;\n")
 				f.write("\tfor(int p = 0; p < num_points; ++p)\n\t{\n") # iterate over 
 				f.close()
 
+	def _make_header_forward(self):
 
+		ext = '.txt'
+		f = open(self.filename+ext,'a')
+		f.write("\n\n\ndouble forward(int num_points, double energy, double grads[], double vjac_it[], double da[], double local_disp[], double mu, double lambda){\n\n")
+		f.write("int i=0;\n")
+
+		f.write("\tfor(int p = 0; p < num_points; ++p)\n\t{\n") # iterate over 
+		f.close()
 
 
 	def _generate_expr(self, var, derivative_string, index, mirrored_index=None):
@@ -80,6 +88,14 @@ class CGenerator(object):
 
 	
 		self.count += 1	
+
+
+	def _generate_expr_forward(self, output_string):
+		ext = '.txt'					
+		f = open(self.filename+ext,'a')
+		f.write("\t\tenergy"+"= "+output_string+"; //  \n")
+		f.close()
+
 
 
 	def _generate_copy(self, var, pointer_index, index):
@@ -154,7 +170,27 @@ class CGenerator(object):
 	#  #    			}\n}\n")
 	# 	f.close()
 
+	def _make_footer_forward(self):
+		ext = '.txt'
+		f = open(self.filename+ext,'a')
 
+		f.write("\t}\n return energy;}\n\n")
+		f.close()
+
+
+	def _write_main(self):
+		ext = '.txt'
+
+		if self.split:
+			f = open(self.filename+self.split_index+ext,'a')
+		else:			
+			f = open(self.filename+ext,'a')
+
+		f.write("\n\nint main(int argc, char* argv[]){ %s")
+		# f.write("test_case_0_size3();")
+
+		f.write("}")
+		f.close()			
 
 
 	def _make_footer(self):
@@ -173,16 +209,6 @@ class CGenerator(object):
 			# self._footer_helper('test_case_0_size3')
 
 			
-			if self.split:
-				f = open(self.filename+self.split_index+ext,'a')
-			else:			
-				f = open(self.filename+ext,'a')
-
-			f.write("\n\nint main(int argc, char* argv[]){ %s")
-			# f.write("test_case_0_size3();")
-
-			f.write("}")
-			f.close()	
 
 
 
@@ -198,5 +224,6 @@ class CGenerator(object):
 		self._make_header()
 		self._generate_expr(derivative_string)
 		self._make_footer()
+
 
 

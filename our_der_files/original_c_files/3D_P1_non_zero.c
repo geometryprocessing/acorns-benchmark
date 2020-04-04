@@ -16,8 +16,8 @@ double func(const double *local_disp, const int n_local_disp, const double *grad
 {
     const int size = 3; // hardcoded
     int n_grads = 4;   //grads_size / da_size / size; = 36 / 6 / 2 ; 132 /  11 / 3 = 4
-    double mu = 0.384615;
-    double lambda = 0.32967;
+    // double mu = 0.384615;
+    // double lambda = 0.32967;
     // run multiple times with p = 0,1,1..6.
     // only initialize constants
 
@@ -62,7 +62,7 @@ double func(const double *local_disp, const int n_local_disp, const double *grad
     for (int d = 0; d < size; ++d)
         mult[d][d] = mult[d][d] + 1;
 
-    const double det_def_grad = mult[0][0] * mult[1][1] - mult[0][1] * mult[1][0];
+    const double det_def_grad = mult[0][0] * (mult[1][1] * mult[2][2] - mult[1][2] * mult[2][1]) - mult[0][1] * (mult[1][0] * mult[2][2] - mult[1][2] * mult[2][0]) + mult[0][2] * (mult[1][0] * mult[2][1] - mult[1][1] * mult[2][0]);
 
     for (int c = 0; c < size; c++)
     {
