@@ -1,3 +1,5 @@
+# optimized code for splitting
+
 from __future__ import print_function
 import sys
 from collections import namedtuple
@@ -658,9 +660,7 @@ def grad_without_traversal(ast, x=0):
 
     global curr_base_variable
 
-    if(reverse_diff and second_der):
-        c_code = c_generator.CGenerator(filename = output_filename, variable_count = len(variables), derivative_count = (len(variables)*(len(variables)+1))//2, c_code = ccode, ispc = ispc)
-    elif (not reverse_diff and second_der): 
+    if second_der: 
         c_code = c_generator.CGenerator(filename = output_filename, variable_count = len(variables), derivative_count = (len(variables)*(len(variables))), c_code = ccode, 
             ispc = ispc, split=split_ders, split_index=0, split_by = split_by)
     else:
@@ -686,9 +686,8 @@ def grad_without_traversal(ast, x=0):
         else:
             expr_name = ast.ext[ext_index].body.block_items[blocks].name
         if expr_name != expression:
-            # print("trying to add "+expr_name+" to dictionary. expression: "+ str(ast.ext[ext_index].body.block_items[blocks].init))
+            
             dict_[expr_name] = expand_equation(ast.ext[ext_index].body.block_items[blocks].init, dict_)
-            # print("added "+expr_name+" to dictionary")
             continue
 
         fun = ast.ext[ext_index].body.block_items[blocks].init
@@ -721,79 +720,16 @@ def grad_without_traversal(ast, x=0):
         # c_code._declare_vars(vars_,i)
         grad[vars_] = ''
 
-
-      
-
-    # print(grad)
-
-    if reverse_diff:
-        if second_der:
-            Expr(fun)._reverse_diff("1.",grad) 
-
-
-            ctr=0
-            for i, vars_ in enumerate(variables):
-                primary_base_variable = Variable(vars_)
-
-                k = vars_
-                v = grad[vars_]
-
-                # print("First derivative: ")
-                # print(vars_)
-                # print(v)
-                simplified = simplify_equation(v)
-                # print("Simplified equation: ")
-                # print(simplified)
-
-
-                new_parser = c_parser.CParser()
-                new_ast = new_parser.parse("double f = {};".format(simplified), filename='<none>')
-
-
-                grad_hess = {}
-                for i_ctr, vars_ in enumerate(variables):
-                    grad_hess[vars_] = ''  
-
-
-
-                Expr(new_ast.ext[0].init)._reverse_diff("1.",grad_hess)
-                # print("Second Derivative: ")
-
-                for j in range(i, len(variables)):
-
-                    k_hess = variables[j]
-                    v_hess = grad_hess[k_hess]
-
-                    secondary_base_variable = Variable(k_hess)
-
-                    print("Second derivative : df / d{} d{}:".format(k, k_hess))
-
-                    # print(k_hess)
-                    # print(v_hess)
-
-                    c_code._generate_expr([primary_base_variable._get(), secondary_base_variable._get()], v_hess,index=ctr)
-                    ctr+=1
-
-
-
-        else:
-            Expr(fun)._reverse_diff("1.",grad) 
-            print(grad)
-            i = 0
-            for k,v in grad.items():
-                c_code._generate_expr(k, v,index=i)
-                i += 1
-
-
-    elif second_der:
+    if second_der:
         ctr=0
         dictionary = {}
-
+        split_ctr = 0
 
         # matrix size: i x j
         # matrix size flattened : i*j values
 
-
+        # produce sub arrays after splitting
+        
         for i,vars_ in enumerate(variables):
             curr_base_variable = Variable(vars_)
             primary_base_variable = Variable(vars_)
@@ -817,9 +753,10 @@ def grad_without_traversal(ast, x=0):
                 flattened_mat_idx = i*len(variables) + j
                 flattened_mat_idx_mirror = i + j*len(variables)
 
-                c_code._generate_expr([primary_base_variable._get(), secondary_base_variable._get()], second_derivative,index = flattened_mat_idx, mirrored_index = flattened_mat_idx_mirror)
+                c_code._generate_expr([primary_base_variable._get(), secondary_base_variable._get()], second_derivative,index = split_ctr, mirrored_index = None)
 
                 ctr+=1
+                split_ctr += 1
                 if  split_ders and  ctr % split_by==0:
                     tmp = int(ctr//split_by)
                     print("Splitting file . Producing file ",tmp)
@@ -828,23 +765,11 @@ def grad_without_traversal(ast, x=0):
                         derivative_count = (len(variables)*(len(variables))), c_code = ccode, 
                         ispc = ispc, split=split_ders, split_index=tmp, split_by = split_by)
                     c_code._make_header()
+                    split_ctr = 0
 
 
 
         pointer_index = 1   
-
-        # for i,vars_ in enumerate(variables):
-        #     curr_base_variable = Variable(vars_)
-        #     # print("current base var: ",curr_base_variable. _get())
-        #     primary_base_variable = Variable(vars_)                
-        #     for j in range(0,i):
-        #         vars_second = variables[j]
-        #         curr_base_variable = Variable(vars_second)
-        #         secondary_base_variable = Variable(vars_second)
-        #         string = str(j)+','+str(i)
-        #         pointer_index = dictionary[string]
-        #         c_code._generate_copy([primary_base_variable._get(), secondary_base_variable._get()], pointer_index=pointer_index,index=ctr)
-        #         ctr += 1
                         
 
     else:
@@ -861,9 +786,7 @@ def grad_without_traversal(ast, x=0):
         c_code._make_header_forward()
         c_code._generate_expr_forward(evaluated)
         c_code._make_footer_forward()  
-    
-    print("Writing main")
-    c_code._write_main()    
+
         
 
 if __name__ == "__main__":
@@ -881,7 +804,6 @@ if __name__ == "__main__":
     parser.add_argument('-func', type = str, dest = 'func', help='function name')
     parser.add_argument('-ccode', type = str, dest = 'ccode', help='function name')
     parser.add_argument('-ispc', type = str, dest = 'ispc', help='function name')
-    parser.add_argument('-reverse', type = str, default = 'False', dest = 'reverse', help='function name')
     parser.add_argument('-forward', type = str, default = 'False', dest = 'forward', help='forward pass through the graph')
     
     parser.add_argument('-second_der', type = str, default = 'False', dest = 'second_der', help='function name')
@@ -913,11 +835,6 @@ if __name__ == "__main__":
     else:
         ispc = False
 
-
-    if parser.reverse == 'True':
-        reverse_diff = True
-    else:
-        reverse_diff = False
 
     if parser.second_der == 'True':
         second_der = True

@@ -23,8 +23,8 @@ class CGenerator(object):
 		self.split = split
 		print(split_index)
 		if self.split:
-			print("opening file : "+self.filename+'{}.txt'.format(split_index))
-			f = open(self.filename+'{}.txt'.format(split_index),'w')
+			print("opening file : "+self.filename+'{}.c'.format(split_index))
+			f = open(self.filename+'{}.c'.format(split_index),'w')
 			f.close()
 		else:
 			f = open(self.filename+'.txt','w')
@@ -40,9 +40,26 @@ class CGenerator(object):
 		if self.c_code:
 			ext = '.txt'
 			if self.split:
+                
+                
+				ext = '.c'
+                
+				# make header
+				if self.split_index=='0':
+					print("Overwrite previous header files: ",self.filename)
+					f = open(self.filename+'.h','w')
+				else:
+					f = open(self.filename+'.h','a')
+                    
+				f.write("void compute_"+str(self.split_index)+"(int num_points, double ders[], double grads[], double vjac_it[], double da[], double local_disp[], double mu, double lambda);\n\n")
+				f.close()
+                
+                
+                
+                
 				f = open(self.filename+self.split_index+ext,'w')
 				f.write("#include <assert.h>\n#include <time.h>\n#include <math.h>\n#include <stdlib.h>\n#include <stdio.h>\n#include <stdint.h>\n")
-				f.write("void compute(int num_points, double ders[], double grads[], double vjac_it[], double da[], double local_disp[], double mu, double lambda){\n\n")
+				f.write("void compute_"+str(self.split_index)+"(int num_points, double ders[], double grads[], double vjac_it[], double da[], double local_disp[], double mu, double lambda){\n\n")
 				f.write("int i=0;\n")
 				f.write("\tfor(int p = 0; p < num_points; ++p)\n\t{\n") # iterate over 
 				f.close()				
@@ -77,6 +94,7 @@ class CGenerator(object):
 
 			ext = '.txt'		
 			if self.split:
+				ext = '.c'
 				f = open(self.filename+self.split_index+ext,'a')
 			else:			
 				f = open(self.filename+ext,'a')
@@ -182,6 +200,7 @@ class CGenerator(object):
 		ext = '.txt'
 
 		if self.split:
+			ext = '.c'
 			f = open(self.filename+self.split_index+ext,'a')
 		else:			
 			f = open(self.filename+ext,'a')
@@ -199,25 +218,12 @@ class CGenerator(object):
 
 			ext = '.txt'			
 			if self.split:
+				ext = '.c'
 				f = open(self.filename+self.split_index+ext,'a')
 			else:			
 				f = open(self.filename+ext,'a')
 			f.write("\t}\n}\n\n")
 			f.close()
-
-
-			# self._footer_helper('test_case_0_size3')
-
-			
-
-
-
-		if (self.ispc):
-
-			ext = '.ispc'				
-			f = open('utils/'+'derivatives.ispc','a')
-			f.write("\t}\n}\n\n")	
-			f.close()		
 
 
 	def _write(self,derivative_string):

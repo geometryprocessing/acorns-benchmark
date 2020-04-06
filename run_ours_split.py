@@ -132,7 +132,7 @@ params = [
     }
 ]
 
-split_ders = False
+split_ders = True
 split_by = 20
 
 def create_local_disp_string(local_disps):
@@ -180,7 +180,7 @@ for param in params[0:]:
 
     local_disp_string = create_local_disp_string(local_disps)
 
-    os.system('python3 forward_diff.py our_der_files/function_c_files/output_{}.c energy -ccode True --vars {} -func function_0 -second True -split_ders {} --output_filename ./our_der_files/der_c_files/derivative_{}'.format(name, local_disp_string, split_ders, name))
+    os.system('python3 forward_diff_split.py our_der_files/function_c_files/output_{}.c energy -ccode True --vars {} -func function_0 -second True -split_ders {} --output_filename ./our_der_files/runnable_files/derivative_{}'.format(name, local_disp_string, split_ders, name))
 
 
     num_points = len(local_disp_eval) * len(local_disp_eval)
@@ -201,6 +201,12 @@ for param in params[0:]:
         double lambda = 0.32967;
         double energy = 0;
     """.format(len(da), num_points, len(local_disp_eval), param['local_disp'], len(grads), param['grads'], len(vjac_it), param['vjac_it'], len(da), param['da'])
+    
+    
+    for split_index in range(num_files):        
+        runnable_string_replace += """
+        double ders{}[{}];
+        """.format(split_index, split_by)
 
 
 
@@ -208,9 +214,15 @@ for param in params[0:]:
     runnable_string_replace += """
 
         struct timespec tstart={0,0}, tend={0,0};
-        clock_gettime(CLOCK_MONOTONIC, &tstart);
-        compute(num_points, &ders, &grads, &vjac_it, &da, &local_disp, mu, lambda);
+        clock_gettime(CLOCK_MONOTONIC, &tstart);"""
+    
+    
+    for split_index in range(num_files):
+        runnable_string_replace += """
+        compute_{}(num_points, &ders{}, &grads, &vjac_it, &da, &local_disp, mu, lambda);""".format(split_index, split_index)
 
+    runnable_string_replace += """
+    
         // energy = forward(num_points, energy, &grads, &vjac_it, &da, &local_disp, mu, lambda);
 
 
@@ -219,76 +231,176 @@ for param in params[0:]:
 
         FILE *fp;
     """
-
+    
+    
+    
+    
     runnable_string_replace += """
-
-        fp = fopen("./results/us/hess/{}.txt", "w+");
-    """.format(name)        
-
+    int ctr = 0;
+    int num_cols = {};
+    
+    
+    """.format(len(local_disp_eval))
+    
+    
     runnable_string_replace += """
-        printf("%f ", delta);
-
-
-        //printf("%f ", energy);
-
-
-        fprintf(fp, "%f ", delta);
-        //fprintf(fp, "%f ", energy);
-
-
-
-        for(int i = 0; i < ders_size; i++) {
-            fprintf(fp, "%f ", ders[i]);
-        }
-        fclose(fp);
-        return 0;
+        for (int i=0; i< num_cols; i++){
+            for (int j=i; j< num_cols; j++){
     """
     
     
+    for split_index in range(num_files):
+        if split_index == 0:
+            runnable_string_replace += """
+            if (ctr < {})""".format(split_by)
+        elif split_index == num_files-1:
+            runnable_string_replace += """
+            else"""
+        else:
+            runnable_string_replace += """
+            else if (ctr < {})""".format((split_index+1)*split_by)   
+        
+        runnable_string_replace += """
+                ders[i*num_cols+j] = ders{}[ctr % {}];""".format(split_index, split_by)
+            
+    runnable_string_replace += """
+            ctr+=1;
+            }
+        }       
+        
+        for (int i=0; i< num_cols; i++){
+            for (int j=0; j< i; j++){
+               ders[i*num_cols+j] = ders[j*num_cols+i];
+                
+            }
+        }    
+        
+    
+        for(int i = 0; i < ders_size; i++){
+            if (i% num_cols==0){
+                printf(\"\\n\");
+            }            
+            printf( "%f ", ders[i]);
+        }          
+    """
+    
+        
+
+    runnable_string_replace += """
+
+        fp = fopen("../../results/us/hess/{}.txt", "w+");
+    """.format(name)        
+
+    runnable_string_replace += """
+        printf("\n\ndelta: %f ", delta);
+
+        fprintf(fp, "%f ", delta);
+        
+        for (int i=0;i<ders_size;i++){
+            fprintf(fp, "%f ", ders[i]);
+        }
+       """
+
+    
+    with open('./our_der_files/runnable_files/main_{}.c'.format(name), 'w+') as file:
+        file.write("#include <assert.h>\n#include <time.h>\n#include <math.h>\n#include <stdlib.h>\n#include <stdio.h>\n#include <stdint.h>\n")
+        file.write("#include \"derivative_{}.h\"".format(name))
+        file.write("\n\nint main(int argc, char* argv[]){")
+        file.write(runnable_string_replace)
+        file.write("fclose(fp);\nreturn 0;\n}")
+        file.close()
+        
+    if not os.path.exists("./our_der_files/runnable_files/obj/"):
+        os.mkdir("/our_der_files/runnable_files/obj/")
+        
+    make_file_code = """
+CC=gcc
+CFLAGS=-O3 -ffast-math -I. 
+
+ODIR=obj
+
+LIBS=-lm
+
+DEPS = derivative_{}.h
+_OBJ = main_{}.o """.format(name, name)
+      
+    for split_index in range(num_files):
+        make_file_code += """ derivative_{}{}.o""".format(name, split_index)    
+    
+    make_file_code += """
+OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
+
+$(ODIR)/%.o: %.c $(DEPS)
+	$(CC) -c -o $@ $< $(CFLAGS)
+
+main_{}: $(OBJ)
+	$(CC) -o $@ $^ $(CFLAGS)  $(LIBS)
+
+.PHONY: clean
+
+clean:
+	rm -f $(ODIR)/*.o  
+""".format(name)    
+    
+    with open('./our_der_files/runnable_files/Makefile','w') as file:
+        file.write(make_file_code)
+       
+    os.system("cd our_der_files/runnable_files/ && make clean && make -j8")
+    os.system("cd our_der_files/runnable_files/ && ./main_{}".format(name))
+    
+    
+    # make header files
+    # add header files to main
+    # write makefile
+    # run makefile
+    
+    
+    
     
 
-    if  split_ders:
-        for split_index in range(num_files):
-            with open('./our_der_files/der_c_files/derivative_{}{}.txt'.format(name,  split_index), 'r') as file:
-                us = file.read()
-                cpp_code = us % (runnable_string_replace)
-                output_file = open('./our_der_files/runnable_files/{}{}.c'.format(name, split_index), "w+")
-                output_file.write(cpp_code)
-                output_file.close()
+
+#     if  split_ders:
+#         for split_index in range(num_files):
+#             with open('./our_der_files/der_c_files/derivative_{}{}.txt'.format(name,  split_index), 'r') as file:
+#                 us = file.read()
+#                 cpp_code = us % (runnable_string_replace)
+#                 output_file = open('./our_der_files/runnable_files/{}{}.c'.format(name, split_index), "w+")
+#                 output_file.write(cpp_code)
+#                 output_file.close()
 
 
-    else:
-        with open('./our_der_files/der_c_files/derivative_{}.txt'.format(name), 'r') as file:
-            us = file.read()
-            cpp_code = us % (runnable_string_replace)
-            output_file = open('./our_der_files/runnable_files/{}.c'.format(name), "w+")
-            output_file.write(cpp_code)
-            output_file.close()
+#     else:
+#         with open('./our_der_files/der_c_files/derivative_{}.txt'.format(name), 'r') as file:
+#             us = file.read()
+#             cpp_code = us % (runnable_string_replace)
+#             output_file = open('./our_der_files/runnable_files/{}.c'.format(name), "w+")
+#             output_file.write(cpp_code)
+#             output_file.close()
 
-    if  split_ders:
-        for split_index in range(num_files):
-            print("compiling...")
-            print(datetime.datetime.now())
-            os.system("gcc -O3 -ffast-math -o ./our_der_files/runnable_files/{}{} ./our_der_files/runnable_files/{}{}.c -lm".format(name, split_index, name, split_index))
-            print("running...")
-            print(datetime.datetime.now())
-            results = []
-            for i in range(10):
-                os.system("./our_der_files/runnable_files/{}{}".format(name, split_index))
-                results.append(get_runtime_from_file(name))        
-    else:
-        print("compiling...")
-        print(datetime.datetime.now())
-        os.system("gcc -O3 -ffast-math -o ./our_der_files/runnable_files/{} ./our_der_files/runnable_files/{}.c -lm".format(name, name))
-        print("running...")
-        print(datetime.datetime.now())
-        results = []
-        for i in range(10):
-            os.system("./our_der_files/runnable_files/{}".format(name))
-            results.append(get_runtime_from_file(name))
-    avg_runtime = float( sum(results) / len(results) )
+#     if  split_ders:
+#         for split_index in range(num_files):
+#             print("compiling...")
+#             print(datetime.datetime.now())
+#             os.system("gcc -O3 -ffast-math -o ./our_der_files/runnable_files/{}{} ./our_der_files/runnable_files/{}{}.c -lm".format(name, split_index, name, split_index))
+#             print("running...")
+#             print(datetime.datetime.now())
+#             results = []
+#             for i in range(10):
+#                 os.system("./our_der_files/runnable_files/{}{}".format(name, split_index))
+#                 results.append(get_runtime_from_file(name))        
+#     else:
+#         print("compiling...")
+#         print(datetime.datetime.now())
+#         os.system("gcc -O3 -ffast-math -o ./our_der_files/runnable_files/{} ./our_der_files/runnable_files/{}.c -lm".format(name, name))
+#         print("running...")
+#         print(datetime.datetime.now())
+#         results = []
+#         for i in range(10):
+#             os.system("./our_der_files/runnable_files/{}".format(name))
+#             results.append(get_runtime_from_file(name))
+#     avg_runtime = float( sum(results) / len(results) )
 
-    avg_runtimes.append(avg_runtime)
+#     avg_runtimes.append(avg_runtime)
     break
 
 # print(avg_runtimes)
