@@ -157,7 +157,7 @@ import math
 print("starting..")
 print(datetime.datetime.now())
 avg_runtimes = []
-for param in params[0:]:
+for param in params[1:]:
     grads = eval(param['grads'].replace("{", "[").replace("}", "]"))
     
     name = param['title']
@@ -292,7 +292,7 @@ for param in params[0:]:
     """.format(name)        
 
     runnable_string_replace += """
-        printf("\n\ndelta: %f ", delta);
+        printf("delta: %f ", delta);
 
         fprintf(fp, "%f ", delta);
         
