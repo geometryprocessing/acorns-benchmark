@@ -157,12 +157,12 @@ import math
 print("starting..")
 print(datetime.datetime.now())
 avg_runtimes = []
-for param in params[1:]:
+for param in params[0:]:
     grads = eval(param['grads'].replace("{", "[").replace("}", "]"))
     
     name = param['title']
     num_local_disp = len(param['local_disp'].split(','))
-    num_files = math.ceil((num_local_disp*(num_local_disp-1))/2/split_by)
+    num_files = math.ceil((num_local_disp*(num_local_disp+1))/2/split_by)
 
     print("doing {}".format(name))
     da = eval(param['da'].replace("{", "[").replace("}", "]"))
