@@ -1,0 +1,4 @@
+our_der_files/*
+results/*
+__pycache__/*
+results/graphs/*

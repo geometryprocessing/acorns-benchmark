@@ -1,8 +1,5 @@
 import os
-import json
-import time
-import math
-from datetime import datetime
+import datetime
 
 params = [
     # # 2D P1 zero
@@ -135,72 +132,187 @@ params = [
     }
 ]
 
-split_by_list = [20]
+split_ders = False
+split_by = 20
 
-def verify_hess_values(values, actual_values):
-    # print("Val: {}\n".format(values))
-    # print("Expcted: {}\n".format(actual_values))
-    assert len(values)-1 == len(actual_values)
-    # print("Us len: {}, them len: {}".format(len(values), len(actual_values)))
-    for i in range(len(values) - 1):
-        print("Us: {}, Them: {}, {}".format(float(values[i]), float(actual_values[i]), i))
-        # assert math.isclose(float(values[i]), float(actual_values[i]), abs_tol=10**-3)
+def create_local_disp_string(local_disps):
+    local_disp_string = ""
+    for i, local_disp in enumerate(local_disps):
+        local_disp_string += ("local_disp[{}]".format(i))
+        if i < len(local_disps) - 1:
+            local_disp_string += (",")
+    return local_disp_string
 
-def get_runtime_from_file(title, split_by, hess=True):
+def get_runtime_from_file(title, hess=True):
     if hess:
-        filename = "./results/us/hess/{}/{}/{}.txt".format(title, split_by, title)
+        filename = "./results/us/grad/{}.txt".format(title)
     else:
         filename = "./results/wenzel/grad/{}_grad.txt".format(title)
     f = open(filename, "r")
-    data = f.read().split(" ")
-    runtime = float(data[0])
-    values = data[1:]
+    runtime = float(f.read().split(" ")[0])
     print(runtime)
-    return runtime, values
+    return runtime
 
-if __name__ == "__main__":
+import math
+print("starting..")
+print(datetime.datetime.now())
+avg_runtimes = []
+for param in params[4:]:
     
-    second_der = True
-    output = {}
     
-    for param in params[3:4]:
+    
+    grads = eval(param['grads'].replace("{", "[").replace("}", "]"))
+    
+    name = param['title']+'_grad'
+    num_local_disp = len(param['local_disp'].split(','))
+    num_files = math.ceil((num_local_disp*(num_local_disp+1))/2/split_by)
+    
+    
+    
+    
+    if not os.path.exists("./our_der_files/der_c_files/{}/".format(name)):
+        os.mkdir("./our_der_files/der_c_files/{}/".format(name))
+    if not os.path.exists("./our_der_files/runnable_files/{}/".format(name)):
+        os.mkdir("./our_der_files/runnable_files/{}/".format(name))
+    if not os.path.exists("./results/us/grad/{}/".format(name)):
+        os.mkdir("./results/us/grad/{}/".format(name))
+    
 
-        if second_der:
-            name = param['title']+'_hess'
-        else:
-            name = param['title'] + '_grad'        
-        
-        output[name] = {}
-        expected_hess = param['expected_output']['hess'].replace(";", ",").replace("[", "").replace("]", "").split(", ")
-        for split_by in split_by_list:
-            start_time_compile = time.time()
-            os.system("cd our_der_files/runnable_files/{}/{} && make clean && make -j16".format(name, split_by))
-            end_time_compile = time.time()
-            compile_time = end_time_compile - start_time_compile
-
-            runtimes = []
-            values = None
-            for i in range(10):
-                os.system("./our_der_files/runnable_files/{}/{}/main_{}".format(name, split_by, name))
-                runtime, values = get_runtime_from_file(name, split_by)
-                runtimes.append(runtime)
-            avg_runtime = sum(runtimes) / len(runtimes)
-            verify_hess_values(values, expected_hess)
-
-            output[name][split_by] = {
-                "us": avg_runtime,
-                "commpile_time": compile_time,
-                "local_disp_num": len(param['local_disp'].split(','))
-            }
-        file_suffix = datetime.today().strftime('%Y-%m-%d-%H:%M:%S')
-        output_file = open('./results/us/hess/{}/full_results-{}.json'.format(name, file_suffix), "w+")
-        output_file.write(json.dumps(output[name], indent=4, sort_keys=True))
+    print("doing {}".format(name))
+    da = eval(param['da'].replace("{", "[").replace("}", "]"))
+    local_disp_eval = eval(param['local_disp'].replace("{", "[").replace("}", "]"))
+    vjac_it = eval(param['vjac_it'].replace("{", "[").replace("}", "]"))
+    size = int(len(grads) / len(da) / 3)
+    local_disps = eval(param['local_disp'].replace("{", "[").replace("}", "]"))
+    with open('./templates/us/function_template.txt', 'r') as file:
+        us = file.read()
+        cpp_code = us % (str(size))
+        output_file = open('./our_der_files/original_c_files/{}.c'.format(name), "w+")
+        output_file.write(cpp_code)
         output_file.close()
+    os.system('python3 fun_visit.py ./our_der_files/original_c_files/{}.c ./our_der_files/function_c_files/output_{}'.format(name, name))
 
-    file_suffix = datetime.today().strftime('%Y-%m-%d-%H:%M:%S')
-    output_file = open('./results/us/hess/full_results-{}.json'.format(file_suffix), "w+")
-    output_file.write(json.dumps(output, indent=4, sort_keys=True))
-    output_file.close()
+    local_disp_string = create_local_disp_string(local_disps)
+
+    os.system('python3 forward_diff.py our_der_files/function_c_files/output_{}.c energy -ccode True --vars {} -func function_0 -second False -split_ders {} --output_filename ./our_der_files/runnable_files/{}/derivative_{} -name {}'.format(name, local_disp_string, split_ders, name, name, name, name))
+
+
+    num_points = len(local_disp_eval) 
+
+
+    main_string_replace = """
+        int num_points = {};
+        int ders_size = {};
+        double ders[{}]""".format(len(da), num_points, num_points)
+    main_string_replace += """ = {0};"""
+    main_string_replace += """
+        double local_disp[{}] = {};
+        double grads[{}] = {};
+        double vjac_it[{}] = {};
+        double da[{}] = {};
+        double mu =  0.384615;
+        double lambda = 0.32967;
+        double energy = 0;
+    """.format(len(local_disp_eval), param['local_disp'], len(grads), param['grads'], len(vjac_it), param['vjac_it'], len(da), param['da'])
+
+
+
+
+    main_string_replace += """
+
+        struct timespec tstart={0,0}, tend={0,0};
+        clock_gettime(CLOCK_MONOTONIC, &tstart);
+        compute_"""
+    
+    main_string_replace+="{}(num_points, &ders, &grads, &vjac_it, &da, &local_disp, mu, lambda);".format(name)
+    
+    main_string_replace+="""
+
+        clock_gettime(CLOCK_MONOTONIC, &tend);
+        double delta = ((double)tend.tv_sec + 1.0e-9*tend.tv_nsec) - ((double)tstart.tv_sec + 1.0e-9*tstart.tv_nsec); // seconds
+
+        FILE *fp;
+    """
+
+    main_string_replace += """
+
+        fp = fopen("./results/us/grad/{}.txt", "w+");
+    """.format(name)        
+
+    main_string_replace += """
+        printf("%f ", delta);
+
+        fprintf(fp, "%f ", delta);
+        
+        for(int i = 0; i < ders_size; i++) {
+            fprintf(fp, "%f ", ders[i]);
+        }
+        fclose(fp);
+        return 0;
+    """
+    
+    
+    
+
+    if  split_ders:
+        for split_index in range(num_files):
+            with open('./our_der_files/der_c_files/derivative_{}{}.txt'.format(name,  split_index), 'r') as file:
+                us = file.read()
+                cpp_code = us % (runnable_string_replace)
+                output_file = open('./our_der_files/runnable_files/{}{}.c'.format(name, split_index), "w+")
+                output_file.write(cpp_code)
+                output_file.close()
+
+
+    else:
+
+        with open('./our_der_files/runnable_files/{}/compute_{}.h'.format(name, name, name), 'w+') as file:
+            file.write("void compute_{}(int num_points, double ders[], double grads[], double vjac_it[], double da[], double local_disp[], double mu, double lambda);".format(name))
+
+        with open('./our_der_files/runnable_files/{}/main_{}.c'.format(name, name), 'w+') as file:
+            file.write("#include <assert.h>\n#include <time.h>\n#include <math.h>\n#include <stdlib.h>\n#include <stdio.h>\n#include <stdint.h>\n")
+            file.write("#include \"compute_{}.h\"".format(name))
+            file.write("\n\nint main(int argc, char* argv[]){")
+            file.write(main_string_replace)
+            file.write("fclose(fp);\nreturn 0;\n}")
+            file.close()                
+                            
+            
+            
+            
+    if  split_ders:
+        for split_index in range(num_files):
+            print("compiling...")
+            print(datetime.datetime.now())
+            os.system("gcc -O3 -ffast-math -o ./our_der_files/runnable_files/{}{} ./our_der_files/runnable_files/{}{}.c -lm".format(name, split_index, name, split_index))
+            print("running...")
+            print(datetime.datetime.now())
+            results = []
+            for i in range(10):
+                os.system("./our_der_files/runnable_files/{}{}".format(name, split_index))
+                results.append(get_runtime_from_file(name))        
+    else:
+        print("compiling...")
+        print(datetime.datetime.now())
+        os.system("gcc -O3 -ffast-math -o ./our_der_files/runnable_files/{}/main_{} ./our_der_files/runnable_files/{}/main_{}.c ./our_der_files/runnable_files/{}/derivative_{}.c -lm".format(name, name, name, name, name, name))
+        print("running...")
+        print(datetime.datetime.now())
+        results = []
+        for i in range(10):
+            os.system("./our_der_files/runnable_files/{}/main_{}".format(name, name))
+            results.append(get_runtime_from_file(name))
+    avg_runtime = float( sum(results) / len(results) )
+
+    avg_runtimes.append(avg_runtime)
+    break
+
+# print(avg_runtimes)
+
+
+
+
+
+
 
 
 

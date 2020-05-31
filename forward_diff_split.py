@@ -661,10 +661,10 @@ def grad_without_traversal(ast, x=0):
     global curr_base_variable
 
     if second_der: 
-        c_code = c_generator.CGenerator(filename = output_filename, variable_count = len(variables), derivative_count = (len(variables)*(len(variables))), c_code = ccode, 
+        c_code = c_generator.CGenerator(filename = output_filename, name=name, variable_count = len(variables), derivative_count = (len(variables)*(len(variables))), c_code = ccode, 
             ispc = ispc, split=split_ders, split_index=0, split_by = split_by)
     else:
-        c_code = c_generator.CGenerator(filename = output_filename, variable_count = len(variables), derivative_count = len(variables), c_code = ccode, ispc = ispc)
+        c_code = c_generator.CGenerator(filename = output_filename, name=name, variable_count = len(variables), derivative_count = len(variables), c_code = ccode, ispc = ispc,  split=split_ders, split_index=0, split_by = split_by)
     c_code._make_header()
 
     # for vars_ in der_vars:
@@ -761,7 +761,7 @@ def grad_without_traversal(ast, x=0):
                     tmp = int(ctr//split_by)
                     print("Splitting file . Producing file ",tmp)
                     c_code._make_footer()
-                    c_code = c_generator.CGenerator(filename = output_filename, variable_count = len(variables), 
+                    c_code = c_generator.CGenerator(filename = output_filename, name=name, variable_count = len(variables), 
                         derivative_count = (len(variables)*(len(variables))), c_code = ccode, 
                         ispc = ispc, split=split_ders, split_index=tmp, split_by = split_by)
                     c_code._make_header()
@@ -773,11 +773,17 @@ def grad_without_traversal(ast, x=0):
                         
 
     else:
+        ctr=0
+        dictionary = {}
+        split_ctr = 0  
+        
         for i,vars_ in enumerate(variables):
-
+            ctr += 1
+            split_ctr += 1
+            
             curr_base_variable = Variable(vars_)
             derivative = Expr(fun)._forward_diff() 
-            # print(derivative) 
+
             c_code._generate_expr(curr_base_variable._get(), derivative,index=i)        
 
     c_code._make_footer()
@@ -805,11 +811,13 @@ if __name__ == "__main__":
     parser.add_argument('-ccode', type = str, dest = 'ccode', help='function name')
     parser.add_argument('-ispc', type = str, dest = 'ispc', help='function name')
     parser.add_argument('-forward', type = str, default = 'False', dest = 'forward', help='forward pass through the graph')
+    parser.add_argument('-split_by', type = int, help='split by')
     
     parser.add_argument('-second_der', type = str, default = 'False', dest = 'second_der', help='function name')
     parser.add_argument('--output_filename', type = str, default ='c_code', help='file name')    
     parser.add_argument('--nth_der', type = int, help='nth derivative')
     parser.add_argument('-split_ders', type = str, default = 'True', dest = 'split_ders', help='split the derivative file')
+    parser.add_argument('-name', type = str, default = 'compute', dest = 'name', help='function name')
 
 
     parser = parser.parse_args()
@@ -819,8 +827,8 @@ if __name__ == "__main__":
     variables = parser.variables.split(",")
     expression = parser.expr
     output_filename = parser.output_filename
-    split_by = 20
-
+    split_by = parser.split_by
+    name = parser.name
     # print(output_filename)
 
 

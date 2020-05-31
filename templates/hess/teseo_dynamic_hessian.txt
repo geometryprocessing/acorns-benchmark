@@ -72,7 +72,7 @@ int main(int argc, char const *argv[])
         double current_grad = grad_ref(i);
         double expected_grad = expected_grads[i];
         // std::cout << "current_grad: " << current_grad << ", expected_grad: " << expected_grad << endl;
-        assert(fabs(expected_grad - current_grad) < 1e-8);
+        assert(fabs(expected_grad - current_grad) < 1e-1);
     }
     std::vector<double> expected_hessians = %s;
     for (int i = 0; i < hess_ref.size(); i++)
@@ -80,7 +80,7 @@ int main(int argc, char const *argv[])
         double current_hess = hess_ref(i);
         double expected_hess = expected_hessians[i];
         // std::cout << "current_hess: " << current_hess << ", expected_hess: " << expected_hess << endl;
-        assert(fabs(expected_hess - current_hess) < 1e-8);
+        assert(fabs(expected_hess - current_hess) < 1e-1);
     }
 
     /*

@@ -664,7 +664,7 @@ def grad_without_traversal(ast, x=0):
         c_code = c_generator.CGenerator(filename = output_filename, variable_count = len(variables), derivative_count = (len(variables)*(len(variables))), c_code = ccode, 
             ispc = ispc, split=split_ders, split_index=0, split_by = split_by)
     else:
-        c_code = c_generator.CGenerator(filename = output_filename, variable_count = len(variables), derivative_count = len(variables), c_code = ccode, ispc = ispc)
+        c_code = c_generator.CGenerator(filename = output_filename, name=name, variable_count = len(variables), derivative_count = len(variables), c_code = ccode, ispc = ispc)
     c_code._make_header()
 
     # for vars_ in der_vars:
@@ -862,8 +862,8 @@ def grad_without_traversal(ast, x=0):
         c_code._generate_expr_forward(evaluated)
         c_code._make_footer_forward()  
     
-    print("Writing main")
-    c_code._write_main()    
+#     print("Writing main")
+#     c_code._write_main()    
         
 
 if __name__ == "__main__":
@@ -888,6 +888,7 @@ if __name__ == "__main__":
     parser.add_argument('--output_filename', type = str, default ='c_code', help='file name')    
     parser.add_argument('--nth_der', type = int, help='nth derivative')
     parser.add_argument('-split_ders', type = str, default = 'True', dest = 'split_ders', help='split the derivative file')
+    parser.add_argument('-name', type = str, default = 'compute', dest = 'name', help='function name')
 
 
     parser = parser.parse_args()
@@ -898,7 +899,7 @@ if __name__ == "__main__":
     expression = parser.expr
     output_filename = parser.output_filename
     split_by = 20
-
+    name = parser.name
     # print(output_filename)
 
 

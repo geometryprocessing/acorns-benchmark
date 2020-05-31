@@ -108,7 +108,7 @@ params = [
         "lambda": "0.32967032967033",
         "mu": "0.384615384615385",
         "size": "3",
-        "title": "3D_P3_non-zero",
+        "title": "3D_P3_non_zero",
         "expected_output": {
             "energy": 339808.328494473, 
             "grad":"[0.03382;  -0.4643;  1.021;  0.6568;  -25.78;  -1.003;  -0.3433;  -23.33;  -0.7614;  -0.2995;  48.03;  0.6132;  1.352;  -55.89;  0.2015;  1.376;  -59.86;  -0.971;  1.152;  -115.3;  -5.231;  1.036;  -111.4;  -5.602;  -0.6223;  -52.11;  -0.3664;  -0.7854;  -50.62;  1.123;  -0.6885;  108.4;  6.258;  0.3763;  106.8;  -1.095;  0.1048;  55.47;  0.7508;  1.342;  51.73;  -2.528;  -1.734;  59.51;  0.917;  -0.3365;  55.88;  -2.542;  3.829;  -657.9;  -13.6;  4.243;  312.8;  13.06;  -2.238;  14.09;  -6.044;  -8.455;  340.1;  15.8]", 
@@ -134,9 +134,9 @@ params = [
 ]
 
 split_ders = True
-split_by = 1
-generate_function_files = False
-generate_der_files = False
+split_by = 20
+generate_function_files = True
+generate_der_files = True
 
 def create_local_disp_string(local_disps):
     local_disp_string = ""
@@ -181,12 +181,17 @@ import math
 print("starting..")
 print(datetime.datetime.now())
 avg_runtimes = []
-split_by_list = [1, 2]
-for param in params[1:2]:
+split_by_list = [20]
+second_der = True
+
+for param in params[3:4]:
 
     grads = eval(param['grads'].replace("{", "[").replace("}", "]"))
     
-    name = param['title']
+    if second_der:
+        name = param['title']+'_hess'
+    else:
+        name = param['title'] + '_grad'
     num_local_disp = len(param['local_disp'].split(','))
 
     if not os.path.exists("./our_der_files/der_c_files/{}/".format(name)):
@@ -230,14 +235,17 @@ for param in params[1:2]:
         if prev_num_files > 1:
 
             if generate_der_files:
-                os.system('python3 forward_diff_split.py our_der_files/function_c_files/output_{}.c energy -ccode True --vars {} -func function_0 -second True -split_ders {} --output_filename ./our_der_files/runnable_files/{}/{}/derivative_{} -split_by {}'.format(name, local_disp_string, split_ders, name, split_by, name, split_by))
+                os.system('python3 forward_diff_split.py our_der_files/function_c_files/output_{}.c energy -ccode True --vars {} -func function_0 -second True -split_ders {} --output_filename ./our_der_files/runnable_files/{}/{}/derivative_{} -name {} -split_by {}'.format(name, local_disp_string, split_ders, name, split_by, name, name, split_by))
 
             num_points = len(local_disp_eval) * len(local_disp_eval)
-
-            runnable_string_replace = """
+            
+            runnable_string_replace = "";
+            runnable_main_string_replace = """
                 int num_points = {};
                 int ders_size = {};
-                double ders[ders_size];
+                double hess[{}]""".format(len(da), num_points, num_points)
+            runnable_main_string_replace += """ = {0};"""
+            runnable_main_string_replace += """
                 double local_disp[{}] = {};
                 double grads[{}] = {};
                 double vjac_it[{}] = {};
@@ -245,42 +253,38 @@ for param in params[1:2]:
                 double mu =  0.384615;
                 double lambda = 0.32967;
                 double energy = 0;
-            """.format(len(da), num_points, len(local_disp_eval), param['local_disp'], len(grads), param['grads'], len(vjac_it), param['vjac_it'], len(da), param['da'])
+            """.format(len(local_disp_eval), param['local_disp'], len(grads), param['grads'], len(vjac_it), param['vjac_it'], len(da), param['da'])
             
             
             for split_index in range(num_files):        
                 runnable_string_replace += """
-                double ders{}[{}];
-                """.format(split_index, split_by)
+                double ders{}[{}] =""".format(split_index, split_by)
+                runnable_string_replace += "{0};"
 
 
+            runnable_main_string_replace += """
+                int num_cols = {};
+            """.format(len(local_disp_eval))  
 
-
-            runnable_string_replace += """
+            runnable_main_string_replace += """
 
                 struct timespec tstart={0,0}, tend={0,0};
                 clock_gettime(CLOCK_MONOTONIC, &tstart);"""
             
             
+            runnable_main_string_replace += """
+                compute_{}(num_points, hess, grads, vjac_it, da, local_disp, mu, lambda); """.format(name)
+            
             for split_index in range(num_files):
                 runnable_string_replace += """
-                compute_{}(num_points, &ders{}, &grads, &vjac_it, &da, &local_disp, mu, lambda);""".format(split_index, split_index)
+                compute_{}{}(num_points, ders{}, grads, vjac_it, da, local_disp, mu, lambda);""".format(name, split_index, split_index)
 
-            runnable_string_replace += """
-            
-                // energy = forward(num_points, energy, &grads, &vjac_it, &da, &local_disp, mu, lambda);
-
-
-                clock_gettime(CLOCK_MONOTONIC, &tend);
-                double delta = ((double)tend.tv_sec + 1.0e-9*tend.tv_nsec) - ((double)tstart.tv_sec + 1.0e-9*tstart.tv_nsec); // seconds
-
-                FILE *fp;
-            """
             
             
             runnable_string_replace += """
-            int ctr = 0;
-            int num_cols = {};
+                int ctr = 0;
+                int ctr2 = 0;
+                int num_cols = {};
             """.format(len(local_disp_eval))
             
             
@@ -302,52 +306,79 @@ for param in params[1:2]:
                     else if (ctr < {})""".format((split_index+1)*split_by)   
                 
                 runnable_string_replace += """
-                        ders[i*num_cols+j] = ders{}[ctr % {}];""".format(split_index, split_by)
+                        hess[i*num_cols+j] = ders{}[ctr2];""".format(split_index, split_by)
                     
             runnable_string_replace += """
                     ctr+=1;
+                    ctr2+=1;
+                    if (ctr2==20){
+                    ctr2 = 0;
+                    }
                     }
                 }       
                 
                 for (int i=0; i< num_cols; i++){
                     for (int j=0; j< i; j++){
-                    ders[i*num_cols+j] = ders[j*num_cols+i];
+                    hess[i*num_cols+j] = hess[j*num_cols+i];
                         
                     }
                 }    
                 
             
+            """
+            
+            runnable_main_string_replace += """
+            
+                // energy = forward(num_points, energy, &grads, &vjac_it, &da, &local_disp, mu, lambda);
+
+
+                clock_gettime(CLOCK_MONOTONIC, &tend);
+                double delta = ((double)tend.tv_sec + 1.0e-9*tend.tv_nsec) - ((double)tstart.tv_sec + 1.0e-9*tstart.tv_nsec); // seconds
+
                 for(int i = 0; i < ders_size; i++){
                     if (i% num_cols==0){
                         printf(\"\\n\");
-                    }            
-                    printf( "%f ", ders[i]);
-                }          
-            """
+                    }
+                    printf( "%f ", hess[i]);
+                }
+
+                FILE *fp;
+            """            
             
-            runnable_string_replace += """
+            runnable_main_string_replace += """
 
                 fp = fopen("./results/us/hess/{}/{}/{}.txt", "w+");
             """.format(name, split_by, name)        
 
-            runnable_string_replace += """
+            runnable_main_string_replace += """
                 printf("delta: %f ", delta);
 
                 fprintf(fp, "%f ", delta);
                 
                 for (int i=0;i<ders_size;i++){
-                    fprintf(fp, "%e ", ders[i]);
+                    fprintf(fp, "%e ", hess[i]);
                 }
             """
-
             
-            with open('./our_der_files/runnable_files/{}/{}/main_{}.c'.format(name, split_by, name), 'w+') as file:
+            
+            with open('./our_der_files/runnable_files/{}/{}/compute_{}.c'.format(name, split_by, name), 'w+') as file:
                 file.write("#include <assert.h>\n#include <time.h>\n#include <math.h>\n#include <stdlib.h>\n#include <stdio.h>\n#include <stdint.h>\n")
                 file.write("#include \"derivative_{}.h\"".format(name))
-                file.write("\n\nint main(int argc, char* argv[]){")
+                file.write("\n\nint compute_"+name+"(int num_points, double hess[], double grads[], double vjac_it[], double da[], double local_disp[], double mu, double lambda){")
                 file.write(runnable_string_replace)
-                file.write("fclose(fp);\nreturn 0;\n}")
+                file.write("return 0;\n}")
                 file.close()
+                
+            with open('./our_der_files/runnable_files/{}/{}/compute_{}.h'.format(name, split_by, name, name), 'w+') as file:
+                file.write("void compute_{}(int num_points, double ders[], double grads[], double vjac_it[], double da[], double local_disp[], double mu, double lambda);".format(name))
+                
+            with open('./our_der_files/runnable_files/{}/{}/main_{}.c'.format(name, split_by, name), 'w+') as file:
+                file.write("#include <assert.h>\n#include <time.h>\n#include <math.h>\n#include <stdlib.h>\n#include <stdio.h>\n#include <stdint.h>\n")
+                file.write("#include \"compute_{}.h\"".format(name))
+                file.write("\n\nint main(int argc, char* argv[]){")
+                file.write(runnable_main_string_replace)
+                file.write("fclose(fp);\nreturn 0;\n}")
+                file.close()                
                 
             if not os.path.exists("./our_der_files/runnable_files/{}/{}/obj/".format(name, split_by)):
                 os.mkdir("./our_der_files/runnable_files/{}/{}/obj/".format(name, split_by))
@@ -360,8 +391,8 @@ ODIR=obj
 
 LIBS=-lm
 
-DEPS = derivative_{}.h
-_OBJ = main_{}.o """.format(name, name)
+DEPS = derivative_{}.h compute_{}.h
+_OBJ = main_{}.o  compute_{}.o""".format(name, name, name, name)
             
             for split_index in range(num_files):
                 make_file_code += """ derivative_{}{}.o""".format(name, split_index)    

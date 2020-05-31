@@ -285,7 +285,7 @@ def generate_graph(wenzel_times, denom):
 if __name__ == "__main__":
     runtimes = []
     denom = []
-    for param in params[3:]:
+    for param in params[4:]:
         runtime = run(param, hess=True)
         runtimes.append(runtime)
         denom.append(len(param['local_disp']))

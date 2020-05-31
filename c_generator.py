@@ -11,10 +11,11 @@ class CGenerator(object):
 		uses string accumulation for returning expressions.
 	"""
 
-	def __init__(self, filename = 'c_code', variable_count = 1, derivative_count = 1, ispc = True, c_code = False, split=False, split_index=0,
+	def __init__(self, filename = 'c_code', name='compute', variable_count = 1, derivative_count = 1, ispc = True, c_code = False, split=False, split_index=0,
 		split_by  = 20):
 		self.indent_level = 0
 		self.filename=filename
+		self.name=name
 		self.variable_count = variable_count # number of variables
 		self.derivative_count = derivative_count # number of derivatives
 		self.count = 0
@@ -27,7 +28,7 @@ class CGenerator(object):
 			f = open(self.filename+'{}.c'.format(split_index),'w')
 			f.close()
 		else:
-			f = open(self.filename+'.txt','w')
+			f = open(self.filename+'.c','w')
 			f.close()
 		self.split_by = split_by
 		self.split_index = str(split_index)
@@ -38,7 +39,7 @@ class CGenerator(object):
 	def _make_header(self):
 
 		if self.c_code:
-			ext = '.txt'
+			ext = '.c'
 			if self.split:
                 
                 
@@ -51,7 +52,7 @@ class CGenerator(object):
 				else:
 					f = open(self.filename+'.h','a')
                     
-				f.write("void compute_"+str(self.split_index)+"(int num_points, double ders[], double grads[], double vjac_it[], double da[], double local_disp[], double mu, double lambda);\n\n")
+				f.write("void compute_"+self.name+str(self.split_index)+"(int num_points, double ders[], double grads[], double vjac_it[], double da[], double local_disp[], double mu, double lambda);\n\n")
 				f.close()
                 
                 
@@ -59,21 +60,23 @@ class CGenerator(object):
                 
 				f = open(self.filename+self.split_index+ext,'w')
 				f.write("#include <assert.h>\n#include <time.h>\n#include <math.h>\n#include <stdlib.h>\n#include <stdio.h>\n#include <stdint.h>\n")
-				f.write("void compute_"+str(self.split_index)+"(int num_points, double ders[], double grads[], double vjac_it[], double da[], double local_disp[], double mu, double lambda){\n\n")
+				f.write("void compute_"+self.name+str(self.split_index)+"(int num_points, double ders[], double grads[], double vjac_it[], double da[], double local_disp[], double mu, double lambda){\n\n")
 				f.write("int i=0;\n")
 				f.write("\tfor(int p = 0; p < num_points; ++p)\n\t{\n") # iterate over 
 				f.close()				
 			else:
+                
+
 				f = open(self.filename+ext,'w')
 				f.write("#include <assert.h>\n#include <time.h>\n#include <math.h>\n#include <stdlib.h>\n#include <stdio.h>\n#include <stdint.h>\n")
-				f.write("void compute(int num_points, double ders[], double grads[], double vjac_it[], double da[], double local_disp[], double mu, double lambda){\n\n")
+				f.write("void compute_"+self.name+"(int num_points, double ders[], double grads[], double vjac_it[], double da[], double local_disp[], double mu, double lambda){\n\n")
 				f.write("int i=0;\n")
 				f.write("\tfor(int p = 0; p < num_points; ++p)\n\t{\n") # iterate over 
 				f.close()
 
 	def _make_header_forward(self):
 
-		ext = '.txt'
+		ext = '.c'
 		f = open(self.filename+ext,'a')
 		f.write("\n\n\ndouble forward(int num_points, double energy, double grads[], double vjac_it[], double da[], double local_disp[], double mu, double lambda){\n\n")
 		f.write("int i=0;\n")
@@ -92,7 +95,7 @@ class CGenerator(object):
 			elif type(var) is str:
 				base = var
 
-			ext = '.txt'		
+			ext = '.c'		
 			if self.split:
 				ext = '.c'
 				f = open(self.filename+self.split_index+ext,'a')
@@ -109,7 +112,7 @@ class CGenerator(object):
 
 
 	def _generate_expr_forward(self, output_string):
-		ext = '.txt'					
+		ext = '.c'					
 		f = open(self.filename+ext,'a')
 		f.write("\t\tenergy"+"= "+output_string+"; //  \n")
 		f.close()
@@ -128,7 +131,7 @@ class CGenerator(object):
 			elif type(var) is str:
 				base = var
 
-			ext = '.txt'		
+			ext = '.c'		
 			f = open(self.filename+ext,'a')
 		
 			# if self.parallel:			
@@ -147,7 +150,7 @@ class CGenerator(object):
 
 		if self.c_code:
 
-			ext = '.txt'			
+			ext = '.c'			
 			f = open(self.filename+ext,'a')
 			f.write("\t\tdouble %s = values[i* %d + %d ];\n" % (var, self.variable_count, index))
 			f.close()
@@ -197,12 +200,12 @@ class CGenerator(object):
 
 
 	def _write_main(self):
-		ext = '.txt'
+		ext = '.c'
 
 		if self.split:
 			ext = '.c'
 			f = open(self.filename+self.split_index+ext,'a')
-		else:			
+		else:
 			f = open(self.filename+ext,'a')
 
 		f.write("\n\nint main(int argc, char* argv[]){ %s")
@@ -216,11 +219,11 @@ class CGenerator(object):
 
 		if self.c_code:
 
-			ext = '.txt'			
+			ext = '.c'
 			if self.split:
 				ext = '.c'
 				f = open(self.filename+self.split_index+ext,'a')
-			else:			
+			else:
 				f = open(self.filename+ext,'a')
 			f.write("\t}\n}\n\n")
 			f.close()
