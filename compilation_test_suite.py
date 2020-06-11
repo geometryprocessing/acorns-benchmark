@@ -184,7 +184,7 @@ avg_runtimes = []
 split_by_list = [20]
 second_der = True
 
-for param in params[3:4]:
+for param in params[0:1]:
 
     grads = eval(param['grads'].replace("{", "[").replace("}", "]"))
     

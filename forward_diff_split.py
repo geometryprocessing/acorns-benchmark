@@ -7,7 +7,7 @@ import math
 from pycparser import parse_file
 from pycparser import c_parser
 import pycparser.c_ast
-import c_generator
+import c_generator_split as c_generator
 import argparse
 import numpy as np
 
@@ -666,6 +666,7 @@ def grad_without_traversal(ast, x=0):
     else:
         c_code = c_generator.CGenerator(filename = output_filename, name=name, variable_count = len(variables), derivative_count = len(variables), c_code = ccode, ispc = ispc,  split=split_ders, split_index=0, split_by = split_by)
     c_code._make_header()
+    file_pointer = open(output_filename+'0.c','a')
 
     # for vars_ in der_vars:
     #     c_code._make_decls(vars_.name)
@@ -753,7 +754,7 @@ def grad_without_traversal(ast, x=0):
                 flattened_mat_idx = i*len(variables) + j
                 flattened_mat_idx_mirror = i + j*len(variables)
 
-                c_code._generate_expr([primary_base_variable._get(), secondary_base_variable._get()], second_derivative,index = split_ctr, mirrored_index = None)
+                c_code._generate_expr([primary_base_variable._get(), secondary_base_variable._get()], second_derivative,index = split_ctr, mirrored_index = None, file_pointer = file_pointer)
 
                 ctr+=1
                 split_ctr += 1
@@ -765,6 +766,9 @@ def grad_without_traversal(ast, x=0):
                         derivative_count = (len(variables)*(len(variables))), c_code = ccode, 
                         ispc = ispc, split=split_ders, split_index=tmp, split_by = split_by)
                     c_code._make_header()
+                    
+                    file_pointer = open(output_filename+str(tmp)+'.c','a')
+
                     split_ctr = 0
 
 
