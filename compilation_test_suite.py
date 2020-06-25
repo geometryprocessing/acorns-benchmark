@@ -235,7 +235,7 @@ for param in params[0:1]:
         if prev_num_files > 1:
 
             if generate_der_files:
-                os.system('python3 forward_diff_split.py our_der_files/function_c_files/output_{}.c energy -ccode True --vars {} -func function_0 -second True -split_ders {} --output_filename ./our_der_files/runnable_files/{}/{}/derivative_{} -name {} -split_by {}'.format(name, local_disp_string, split_ders, name, split_by, name, name, split_by))
+                os.system('python3 reverse_diff_split.py our_der_files/function_c_files/output_{}.c energy -ccode True --vars {} -func function_0 -second True -split_ders {} --output_filename ./our_der_files/runnable_files/{}/{}/derivative_{} -name {} -split_by {}'.format(name, local_disp_string, split_ders, name, split_by, name, name, split_by))
 
             num_points = len(local_disp_eval) * len(local_disp_eval)
             

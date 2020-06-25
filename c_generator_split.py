@@ -104,11 +104,13 @@ class CGenerator(object):
 			file_pointer.write("\t\tders[i*"+str(self.derivative_count)+"+"+str(index)+"]"+"+= "+derivative_string+"; // {} \n".format('df/('+base+')'))
 			if index != mirrored_index and mirrored_index:
 				file_pointer.write("\t\tders[i*"+str(self.derivative_count)+"+"+str(mirrored_index)+"]"+"= ders[i*"+str(self.derivative_count)+"+"+str(index)+"]; // {} \n".format('df/('+base+')'))
-			# file_pointer.close()					
+			# file_pointer.close()		
+
 		
 
 	
 		self.count += 1	
+		return file_pointer
 
 
 	def _generate_expr_forward(self, output_string):
@@ -182,18 +184,18 @@ class CGenerator(object):
 		f.close()			
 
 
-	def _make_footer(self):
+	def _make_footer(self, file_pointer):
 
 		if self.c_code:
 
-			ext = '.c'
-			if self.split:
-				ext = '.c'
-				f = open(self.filename+self.split_index+ext,'a')
-			else:
-				f = open(self.filename+ext,'a')
-			f.write("\t}\n}\n\n")
-			f.close()
+			# ext = '.c'
+			# if self.split:
+			# 	ext = '.c'
+			# 	f = open(self.filename+self.split_index+ext,'a')
+			# else:
+			# 	f = open(self.filename+ext,'a')
+			file_pointer.write("\t}\n}\n\n")
+			file_pointer.close()
 
 
 	def _write(self,derivative_string):

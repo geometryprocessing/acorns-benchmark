@@ -163,7 +163,7 @@ if __name__ == "__main__":
     second_der = True
     output = {}
     
-    for param in params[3:4]:
+    for param in params[0:1]:
 
         if second_der:
             name = param['title']+'_hess'
