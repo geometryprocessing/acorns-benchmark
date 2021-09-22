@@ -64,7 +64,6 @@ acorns.autodiff(c_function, 'energy', ['a','p'], func = 'function_test', output_
 ***acorns/:***
   The acorns module source code.
   
-***tests/:***
-  Unit tests and comparison benchmarks with other standard packages.
+
 
 
