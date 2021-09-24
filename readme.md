@@ -22,17 +22,13 @@ In order to run the benchmarking you need Pytorch installed, Adept installed, Ja
 This hosts all of the code used to generate the data and graphs for [ACORNS](https://arxiv.org/abs/2007.05094)
 There are 5 main functions that generate the data:
 1. `tests/updated_test_suite.py` - This runs ACORNS against PyTorch, Adept, Mitsuba, Enoki and Tapenade with respect to 2 hardcoded functions:
-  a. `((k*k+3*k)-k/4)/k+k*k*k*k+k*k*(22/7*k)+k*k*k*k*k*k*k*k*k`
-  b. `sin(k) + cos(k) + pow(k, 2)`
-
+  - `((k*k+3*k)-k/4)/k+k*k*k*k+k*k*(22/7*k)+k*k*k*k*k*k*k*k*k`
+  - `sin(k) + cos(k) + pow(k, 2)`
 this returns the gradient of all of them and outputs the results in `./tests/results/grad/full_results-{TIMESTAMP}.json`
-
 2. `tests/updated_test_suite_random.py` This runs ACORNS for the gradient against PyTorch, Adept, Mitsuba, Enoki and Tapenade with respect to 10 different functions, each one having increasing variables (from 1 to 10)
 this returns the gradient of all of them and outputs the results in `./tests/results/grad/full_results_random-{TIMESTAMP}.json`
-
 3. `tests/updated_hessian_test_suite.py` This runs ACORNS for the hessian against Mitsuba, PyTorch and Tapenade for the functions given in (1)
 this returns the gradient of all of them and outputs the results in `./tests/results/hess/full_results_hessian-{TIMESTAMP}.json`
-
 4. `tests/updated_hessian_test_suite_random.py` This runs ACORNS for the hessian against Mitsuba, PyTorch and Tapenade with respect to 10 different functions, each one having increasing variables (from 1 to 10)
 this returns the gradient of all of them and outputs the results in `./tests/results/hess/full_results_hessian-{TIMESTAMP}.json`
 5. `tests/parallel_test_suite.py` This runs ACORNS with OpenMP across threads increasing from 1 to 25
