@@ -1,6 +1,8 @@
+import numpy as np
 import torch
 import time
-import numpy as np
+import os
+os.environ['NPY_MKL_FORCE_INTEL'] = 'GNU'
 
 num_params = %s
 %s

@@ -1,0 +1,66 @@
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <Eigen/Cholesky>
+#include <adept_arrays.h>
+#include <chrono>
+
+using namespace adept;
+using namespace std;
+using namespace std::chrono;
+int main(int argc, char **argv)
+{
+   string output_filename = argv[1];
+   cout << output_filename << endl;
+
+   int num_params = %s;
+   int num_vars = %s;
+
+   Stack stack;
+   aVector %s
+
+   Eigen::VectorXd args(num_params * num_vars);
+   Eigen::VectorXd ders(num_params * num_vars);
+
+   std::ifstream file("%s");
+   int i = 0;
+   for (std::string line; std::getline(file, line);)
+   {
+       args(i) = stod(line.c_str());
+       i++;
+   }
+   file.close();
+
+
+   for (int index = 0; index < num_params; index++) {
+%s
+    }
+
+
+   ofstream outfile;
+   outfile.open(output_filename);
+
+   auto start = high_resolution_clock::now();
+   stack.new_recording();                 // Clear any existing differential statements
+   aReal J = %s;
+   J.set_gradient(1.0);                   // Seed the dependent variable
+   stack.reverse();                       // Reverse-mode differentiation
+
+   auto stop = high_resolution_clock::now();
+   auto duration = duration_cast<microseconds>(stop - start);
+   outfile << (double)duration.count() / 1000000.0 << " ";
+   for (int index = 0; index < num_params; index++) {
+%s
+    }
+   for (int i = 0; i < num_params * num_vars; i++)
+   {
+        ostringstream ss;
+        ss.precision(3);
+       ss << fixed << ders[i];
+       outfile << ss.str() << " ";
+   }
+
+   outfile.close();
+
+   return 0;
+}

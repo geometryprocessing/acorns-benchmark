@@ -58,7 +58,6 @@ def generate_pytorch_file(func_num, num_params, functions):
     pytorch_file.write(pytorch_code)
     pytorch_file.close()
     
-
 def generate_variable(func_num, functions):
     var_str = ""
     for i, var in enumerate(functions[func_num][1]):
@@ -90,10 +89,9 @@ def generate_pytorch_hessian_file(func_num, num_params, functions):
     pytorch_file.close()    
 
 def run_pytorch():
-    cmd = "python3 " + "./tests/utils/pytorch.py" + " > " + "./tests/utils/pytorch_output.txt"
+    cmd = "python3 ./tests/utils/pytorch.py > ./tests/utils/pytorch_output.txt"
     os.system(cmd)
     return general_utils.parse_output("./tests/utils/pytorch_output.txt")
-
 
 def run_pytorch_hessian():
     cmd = "python3 " + "./tests/utils/pytorch_hessian.py" + " > " + "./tests/utils/pytorch_output.txt"

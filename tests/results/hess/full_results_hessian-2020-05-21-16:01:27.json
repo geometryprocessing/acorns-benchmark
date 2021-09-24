@@ -1,0 +1,32 @@
+{
+    "((k*k+3*k)-k/4)/k+k*k*k*k+k*k*(22/7*k)+k*k*k*k*k*k*k*k*k": {
+        "10": {
+            "compiler_version": "",
+            "flags": "-ffast-math -O3",
+            "pytorch": 0.009103941917419433,
+            "us": 0.0,
+            "wenzel_dynamic": 5.6500000000000005e-05,
+            "wenzel_static": 0.0
+        }
+    },
+    "((k*k+3*k)-k/4)/k+k*k*k*k+k*k*(22/7*k)+k*k*k*k*k*k*k*k*k*j": {
+        "10": {
+            "compiler_version": "",
+            "flags": "-ffast-math -O3",
+            "pytorch": 0.006824970245361328,
+            "us": 0.0,
+            "wenzel_dynamic": 4.96e-05,
+            "wenzel_static": 6e-07
+        }
+    },
+    "sin(k) + cos(k) + pow(k, 2)": {
+        "10": {
+            "compiler_version": "",
+            "flags": "-ffast-math -O3",
+            "pytorch": 0.0033038854598999023,
+            "us": 2.9e-05,
+            "wenzel_dynamic": 3.74e-05,
+            "wenzel_static": 2.3400000000000003e-05
+        }
+    }
+}

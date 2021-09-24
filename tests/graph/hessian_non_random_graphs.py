@@ -5,7 +5,9 @@ import json
 import re
 
 
-fontsize = 19
+fontsize = 40
+markersize = 20
+linewidth = 3
 num_params_list = [10, 2010, 4010, 6010, 8010, 10010, 20010, 30010, 40010]
 
 
@@ -64,41 +66,19 @@ def convert_files_to_lists(file_location):
         us_max_hess, wenzel_hess_static_max, tapenade_hess_max, pytorch_max_hess
 
 
-def generate_two_graph(avg_us, avg_them, denom, function, label, num_vars):
-    plt.plot(denom, avg_us, color='#1abc9c', linestyle='dashed',  markersize=7)
-    plt.plot(denom, avg_them, color='#f1c40f',
-             linestyle='dashed', markersize=7)
-    # legend
-    plt.xlabel('Parameters', fontfamily='monospace')
-    plt.ylabel('Time (s)', fontfamily='monospace')
-    plt.legend(('Us', label),
-               shadow=False, fontsize=10, frameon=False)
-    plt.margins(0, 0)
-    plt.savefig('./tests/results/hess/graphs/random/graph_{}_{}.pdf'.format(label, num_vars), bbox_inches='tight',
-                pad_inches=0)
-    # plt.savefig('./tests/complex/graphs/graph_by_128_speedup.pdf')
-    plt.clf()
-
-
 def generate_four_graph(avg_us, avg_wenzel_static, avg_tapenade, avg_pytorch, denom, num_vars):
     fig = plt.figure(figsize=(20, 10))
     ax = fig.add_subplot(1, 1, 1)
-    ax.plot(denom, avg_us, color='#130f40',
-            linestyle='dashed',  markersize=7)
-    ax.plot(denom, avg_wenzel_static, color='#ff7979',
-            linestyle='dashed', markersize=7)
-    ax.plot(denom, avg_tapenade, color='#badc58',
-            linestyle='dashed', markersize=7)
-    ax.plot(denom, avg_pytorch, color='#7ed6df',
-            linestyle='dashed', markersize=7)
+    ax.plot(denom, avg_us, color='#130f40', markersize=50, linewidth=5)
+    ax.plot(denom, avg_pytorch, color='#ff7979', linewidth=linewidth)
+    ax.plot(denom, avg_wenzel_static, color='#badc58', linewidth=linewidth)
+    ax.plot(denom, avg_tapenade, color='#7ed6df', linewidth=linewidth)
     ax.set_yscale('log')
     plt.ylim(1.e-05, 1.e+03)
     plt.xlim(2010, 40010)
     plt.setp(ax.get_xticklabels(), fontsize=20)
     plt.setp(ax.get_yticklabels(), fontsize=20)
     # legend
-    plt.legend(('ACORNS', 'Mitsuba (Static)', 'Tapenade', 'PyTorch'),
-               shadow=False, fontsize=fontsize, frameon=False)
     plt.margins(0, 0)
     plt.savefig('./tests/results/hess/graphs/non-random/full/{}_function_hess_g++9.pdf'.format(num_vars), bbox_inches='tight',
                 pad_inches=0)

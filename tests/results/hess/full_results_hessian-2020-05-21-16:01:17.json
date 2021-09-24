@@ -1,0 +1,12 @@
+{
+    "4*((U * (1 - U)))": {
+        "10": {
+            "compiler_version": "",
+            "flags": "-ffast-math -O3",
+            "pytorch": 0.007241749763488769,
+            "us": 0.0,
+            "wenzel_dynamic": 2.65e-05,
+            "wenzel_static": 0.0
+        }
+    }
+}

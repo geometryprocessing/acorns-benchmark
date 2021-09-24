@@ -1,2 +1,4 @@
 *.npy
 tests/utils/numpy_params/*
+*.png
+*.zip

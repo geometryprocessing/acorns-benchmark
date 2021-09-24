@@ -25,7 +25,9 @@ def natural_keys(text):
 def convert_split_size_to_number_of_files(split_sizes, num_params):
     num_files = []
     for split in split_sizes:
+        print(f'split={split}')
         num_file = math.ceil(float(num_params) / float(split))
+        print(f'num_file={num_file}')
         num_files.append(num_file)
     return num_files
 
@@ -43,7 +45,7 @@ def convert_files_to_lists(file_location):
 
             for split in sorted(data[key], key=natural_keys):
                 if '.o' in data[key][split]:
-                    o_size = float(data[key][split]['.o'] / 1e+9)
+                    o_size = float(data[key][split]['.o'] / 1e+6)
                     split_set.add(int(split))
                     print("Key: {}, Split: {}, Data: {} ".format(
                         key, split, data[key][split]))
@@ -59,20 +61,22 @@ def convert_files_to_lists(file_location):
 def generate_two_graph(avg_us, denom, function, suffix="", ymin=1.e+00, ymax=1.e+02):
     fig = plt.figure(figsize=(10, 10))
     ax = fig.add_subplot(1, 1, 1)
-    plt.plot(denom, avg_us, color='#1abc9c', linestyle='dashed',  markersize=7)
-    plt.ylim(ymin, ymax)
+    ax.plot(denom, avg_us, color='#1abc9c', linestyle='dashed',  markersize=7)
+    ax.set_ylim([ymin, ymax])
     plt.setp(ax.get_xticklabels(), fontsize=20)
     plt.setp(ax.get_yticklabels(), fontsize=20)
-    plt.yscale('log')
-    plt.margins(0, 0)
+    ax.set_yscale('log')
+    ax.margins(0, 0)
     plt.savefig('./tests/complex/graphs/sizes/{}-{}.pdf'.format(function, suffix), bbox_inches='tight',
                 pad_inches=0)
-
     plt.clf()
 
 
 o_sizes, functions, split_list, = convert_files_to_lists(
     "./tests/complex/data/sizes/file_sizes.json")
+
+print(f'o sizes: {o_sizes}')
+print(f'functions: {functions}')
 
 for i, function in enumerate(functions):
     num_files = convert_split_size_to_number_of_files(
@@ -80,5 +84,5 @@ for i, function in enumerate(functions):
     print('{}: \n O Sizes: {}\n Num Files {}'.format(
         function, o_sizes[function], num_files))
     generate_two_graph(o_sizes[function], num_files,
-                       function, suffix="O", ymin=1.e-04, ymax=1.e-02)
+                       function, suffix="O", ymin=1.e-01, ymax=1.e+02)
     # generate_full_graph_without_dynamic(us_times[label], pytorch_times[label], wenzel_static_times[label], enoki_times[label], tapenade_times[label], num_params, label, 'Wenzel', i)

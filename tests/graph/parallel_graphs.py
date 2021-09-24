@@ -39,7 +39,7 @@ def get_speedup_list(time_list):
 def generate_two_graph(avg_us, denom, suffix="", ylabel="Time (s)"):
     fig = plt.figure(figsize=(10, 10))
     ax = fig.add_subplot(1, 1, 1)
-    plt.plot(denom, avg_us, color='#1abc9c', linestyle='dashed',  markersize=7)
+    ax.plot(denom, avg_us, color='#130f40', markersize=7, linewidth=5)
     plt.margins(0, 0)
     plt.xlim(1, 47)
     plt.setp(ax.get_xticklabels(), fontsize=20)

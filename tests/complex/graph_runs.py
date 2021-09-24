@@ -6,7 +6,7 @@ import re
 import math
 
 fontsize = 30
-num_params = [78, 465, 465, 1830]
+num_params = [78, 465, 1830]
 
 
 def convert_split_size_to_number_of_files(split_sizes, num_params):
@@ -58,7 +58,9 @@ def generate_two_graph(avg_us, denom, function, suffix=""):
     fig = plt.figure(figsize=(10, 10))
     ax = fig.add_subplot(1, 1, 1)
     plt.plot(denom, avg_us, color='#1abc9c', linestyle='dashed',  markersize=7)
-    plt.ylim(1.e-05, 1.e-02)
+    plt.ylim(1.e-05, 1.e-01)
+    plt.xlim(denom[-1], denom[0])
+    print(plt.xlim)
     plt.setp(ax.get_xticklabels(), fontsize=20)
     plt.setp(ax.get_yticklabels(), fontsize=20)
     plt.yscale('log')
@@ -69,13 +71,11 @@ def generate_two_graph(avg_us, denom, function, suffix=""):
 
 
 runtimes, functions, split_list, = convert_files_to_lists(
-    "./tests/complex/data/runs/data_no_j.json")
+    "./tests/complex/data/runs/test_data.json")
 
 for i, function in enumerate(functions):
     num_files = convert_split_size_to_number_of_files(
         split_list, num_params[i])
-    print(num_files)
-    # generate_two_graph(runtimes[function], split_list, function, suffix="Runtimes")
+    print(function, num_files)
     generate_two_graph(runtimes[function],
                        num_files, function, suffix="Run Times")
-    # generate_full_graph_without_dynamic(us_times[label], pytorch_times[label], wenzel_static_times[label], enoki_times[label], tapenade_times[label], num_params, label, 'Wenzel', i)
