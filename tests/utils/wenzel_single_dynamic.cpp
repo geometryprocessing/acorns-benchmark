@@ -17,8 +17,8 @@ int main(int argc, char **argv)
    string output_filename = argv[1];
    cout << output_filename << endl;
 
-   int num_params = 90010;
-   int num_vars = 10;
+   int num_params = 20010;
+   int num_vars = 1;
 
    Eigen::VectorXd args(num_params * num_vars);
    Eigen::VectorXd ders(num_params * num_vars);
@@ -39,19 +39,10 @@ int main(int argc, char **argv)
    for (int index = 0; index < num_params; index++)
    {
        /* There are two independent variables */
-       DiffScalarBase::setVariableCount(10);
-		DScalar J(0, args[index * 10 + 0]), T(1, args[index * 10 + 1]), k(2, args[index * 10 + 2]), a(3, args[index * 10 + 3]), h(4, args[index * 10 + 4]), v(5, args[index * 10 + 5]), s(6, args[index * 10 + 6]), r(7, args[index * 10 + 7]), N(8, args[index * 10 + 8]), e(9, args[index * 10 + 9]);
-		DScalar Fx = 4*4*4*4*4*4*4*4*4*4*((J * (1 - J))*(T * (1 - T))*(k * (1 - k))*(a * (1 - a))*(h * (1 - h))*(v * (1 - v))*(s * (1 - s))*(r * (1 - r))*(N * (1 - N))*(e * (1 - e)));
-		ders[index * 10 + 0] = Fx.getGradient()(0);
-		ders[index * 10 + 1] = Fx.getGradient()(1);
-		ders[index * 10 + 2] = Fx.getGradient()(2);
-		ders[index * 10 + 3] = Fx.getGradient()(3);
-		ders[index * 10 + 4] = Fx.getGradient()(4);
-		ders[index * 10 + 5] = Fx.getGradient()(5);
-		ders[index * 10 + 6] = Fx.getGradient()(6);
-		ders[index * 10 + 7] = Fx.getGradient()(7);
-		ders[index * 10 + 8] = Fx.getGradient()(8);
-		ders[index * 10 + 9] = Fx.getGradient()(9);
+       DiffScalarBase::setVariableCount(1);
+		DScalar k(0, args[index * 1 + 0]);
+		DScalar Fx = ((k*k+3*k)-k/4)/k+k*k*k*k+k*k*(22/7*k)+k*k*k*k*k*k*k*k*k;
+		ders[index * 1 + 0] = Fx.getGradient()(0);
    }
 
    auto stop = high_resolution_clock::now();

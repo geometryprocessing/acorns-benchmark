@@ -13,13 +13,12 @@ sys.path.append('tests/python_test_utils')
 
 sys.path.append('acorns')
 
-import forward_diff
-import tapenade_utils
 import us_utils
 import wenzel_utils
 import pytorch_utils
-import enoki_utils
-import generate_function
+import tapenade_utils
+
+tapenade = False
 
 
 def generate_params(num_params, function_num):
@@ -96,7 +95,7 @@ if __name__ == "__main__":
 
     for func_num, func in enumerate(functions):
 
-        print(func)
+        print(func[0])
 
         output[func[0]] = {}
 
@@ -109,12 +108,13 @@ if __name__ == "__main__":
         us_utils.compile_ours(RUN_C, runnable_filename="./tests/utils/static_code/runnable_hessian", derivatives_filename="./tests/utils/hessian/ders_hessian")
 
         # generate and compile tapenade code
-        tapenade_utils.generate_function_c_file(
-            func_num, functions, './tests/utils/tapenade_func.c')
-        tapenade_utils.generate_hessian_c_file(func_num)
-        tapenade_utils.generate_runnable_tapenade_hess(
-            func[1], len(func[1]), func_num)
-        tapenade_utils.compile('./tests/utils/runnable_tapenade_hess')
+        if tapenade:
+            tapenade_utils.generate_function_c_file(
+                func_num, functions, './tests/utils/tapenade_func.c')
+            tapenade_utils.generate_hessian_c_file(func_num)
+            tapenade_utils.generate_runnable_tapenade_hess(
+                func[1], len(func[1]), func_num)
+            tapenade_utils.compile('./tests/utils/runnable_tapenade_hess')
 
         while num_params <= MAX_PARAMS:
 
@@ -142,25 +142,21 @@ if __name__ == "__main__":
                 ours = us_utils.run_ours(
                     functions[func_num], num_params, functions, PARAMS_FILENAME, OUTPUT_FILENAME,   runnable_filename="./tests/utils/static_code/runnable_hessian")
                 wenzel_static = wenzel_utils.run_wenzel("hessian", True)
-                tapenade = tapenade_utils.run_tapenade(functions[func_num], num_params, functions, PARAMS_FILENAME, TAPENADE_OUTPUT, RUNNABLE_TAPENADE)
+                if tapenade:
+                    tapenade = tapenade_utils.run_tapenade(functions[func_num], num_params, functions, PARAMS_FILENAME, TAPENADE_OUTPUT, RUNNABLE_TAPENADE)
 
 
-                # print("Pytorch: {}\n Us: {}\n Wenzel Static: {}\n Wenzel Dynamic: {}\n Tapenade: {}".format(pytorch, ours, wenzel_static, wenzel_dynamic, tapenade))
                 tapenade_times.append(float(tapenade[1]))
                 our_times.append(float(ours[1]))
                 py_times.append(float(pytorch[1]))
                 wenzel_times_static.append(float(wenzel_static[1]))
 
-            # print for debug purposes
-            print("Parameters: ", params[:10])
-            print("ours: ", ours[0][:10])
-            # print("pytorch: ", pytorch[0][:10])
 
             output[func[0]][num_params] = {
                 "us": sum(our_times) / len(our_times),
                 "pytorch": sum(py_times) / len(py_times),
                 "wenzel_static": (sum(wenzel_times_static) / len(wenzel_times_static)),
-                "tapenade": sum(tapenade_times) / len(tapenade_times),
+                "tapenade": sum(tapenade_times) / len(tapenade_times) if tapenade else None,
                 "flags": "-ffast-math -O3",
                 "compiler_version": WENZEL_COMPILER_VERSION
             }

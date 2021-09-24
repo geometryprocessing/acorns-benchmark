@@ -18,7 +18,7 @@ int main(int argc, char **argv)
 
    typedef DScalar2<double, Gradient, Hessian> DScalar;
 
-   int num_params = 2010;
+   int num_params = 10;
    int num_vars = 1;
    int num_ders = num_vars * num_vars;
 
@@ -42,8 +42,8 @@ int main(int argc, char **argv)
    {
        /* There are two independent variables */
        DiffScalarBase::setVariableCount(1);
-		DScalar D(0, args[index * 1 + 0]);
-		DScalar Fx = 4*((D * (1 - D)));
+		DScalar T(0, args[index * 1 + 0]);
+		DScalar Fx = 4*((T * (1 - T)));
 		ders[index * 1 + 0] = Fx.getHessian()(0);
    }
 

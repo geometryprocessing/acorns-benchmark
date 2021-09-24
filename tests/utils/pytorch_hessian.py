@@ -4,16 +4,16 @@ import numpy as np
 import torch.autograd.functional as F
 
 num_vars = 1
-num_params = 2010
-D = torch.tensor(np.load('./tests/utils/numpy_params/function_0_param_D.npy'), requires_grad=True, dtype=torch.float)
+num_params = 10
+T = torch.tensor(np.load('./tests/utils/numpy_params/function_0_param_T.npy'), requires_grad=True, dtype=torch.float)
 torch.set_num_threads(1)
 
-def make_func(D):
-     return (4*((D * (1 - D)))).sum()
+def make_func(T):
+     return (4*((T * (1 - T)))).sum()
      
 start_time_pytorch = time.time()
 
-hessians = F.hessian(make_func, (D.data))
+hessians = F.hessian(make_func, (T.data))
 
 end_time_pytorch = time.time()
 runtime = (end_time_pytorch - start_time_pytorch)

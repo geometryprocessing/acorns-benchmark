@@ -1,5 +1,5 @@
-int function_1(double k)
+int function_0(double T)
 {
-	int p = sin(k) + cos(k) + pow(k, 2);
+	int p = 4*((T * (1 - T)));
 	return 0;
 }

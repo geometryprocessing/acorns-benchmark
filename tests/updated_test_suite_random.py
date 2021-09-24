@@ -20,6 +20,8 @@ import generate_function
 import tapenade_utils
 import adept_utils
 
+tapenade = False
+
 def generate_params(num_params, function_num):
     print("Generating params for function_num", function_num) #, " which is: ", functions[function_num][0])
     num_variables = len(functions[function_num][1])
@@ -149,10 +151,11 @@ if __name__ == "__main__":
         us_utils.compile_ours(RUN_C, RUNNABLE_FILENAME, DERIVATIVES_FILENAME)
 
         # generate and compile tapenade code
-        # tapenade_utils.generate_function_c_file(func_num, functions, './tests/utils/tapenade_func.c')
-        # tapenade_utils.generate_derivatives_c_file(func_num)
-        # tapenade_utils.generate_runnable_tapenade(func[1], len(func[1]), func_num)
-        # tapenade_utils.compile('./tests/utils/runnable_tapenade')
+        if tapenade:
+            tapenade_utils.generate_function_c_file(func_num, functions, './tests/utils/tapenade_func.c')
+            tapenade_utils.generate_derivatives_c_file(func_num)
+            tapenade_utils.generate_runnable_tapenade(func[1], len(func[1]), func_num)
+            tapenade_utils.compile('./tests/utils/runnable_tapenade')
 
 
 
@@ -166,8 +169,8 @@ if __name__ == "__main__":
             pytorch_utils.generate_pytorch_file(func_num, num_params, functions)
 
             # generate and compile wenzel code
-            # enoki_utils.generate_enoki_file(functions, func_num, num_params)
-            # enoki_utils.compile_enoki()
+            enoki_utils.generate_enoki_file(functions, func_num, num_params)
+            enoki_utils.compile_enoki()
 
             # generate and compile adept code
             adept_utils.generate_adept_file(func_num, num_params, adept_functions, PARAMS_FILENAME)
@@ -183,21 +186,20 @@ if __name__ == "__main__":
             py_times = []
             wenzel_times_static = []
             wenzel_times_dynamic = []
-            # enoki_times = []
+            enoki_times = []
             adept_times = []
-            # tapenade_times = []
+            tapenade_times = []
 
             for i in range(NUM_ITERATIONS):
 
                 pytorch = pytorch_utils.run_pytorch()
                 ours = us_utils.run_ours(functions[func_num], num_params, functions, PARAMS_FILENAME, OUTPUT_FILENAME, RUNNABLE_FILENAME)
-                # enoki = enoki_utils.run_enoki()
+                enoki = enoki_utils.run_enoki()
                 wenzel_static = wenzel_utils.run_wenzel("single", True)
                 wenzel_dynamic = wenzel_utils.run_wenzel("single", False)
-                # tapenade = tapenade_utils.run_tapenade(functions[func_num], num_params, functions, PARAMS_FILENAME, TAPENADE_OUTPUT, RUNNABLE_TAPENADE)
+                if tapenade:
+                    tapenade = tapenade_utils.run_tapenade(functions[func_num], num_params, functions, PARAMS_FILENAME, TAPENADE_OUTPUT, RUNNABLE_TAPENADE)
                 adept = adept_utils.run_adept()
-
-                # print("Pytorch: {}\n Us: {}\n Enoki: {}\n Tapenade: {}\n Wenzel Static: {}\n Wenzel Dynamic: {}".format(pytorch, ours, enoki, tapenade, wenzel_static, wenzel_dynamic))
 
                 # for j in range(len(ours[0])):
                 #     assert math.isclose(float(pytorch[0][j]), float(wenzel[0][j]), abs_tol=10**-3)
@@ -205,10 +207,11 @@ if __name__ == "__main__":
                     # assert math.isclose(float(ours[0][j]), float(enoki[0][j]), abs_tol=10**-1)
                 our_times.append(float(ours[1]))
                 py_times.append(float(pytorch[1]))
-                # enoki_times.append(float(enoki[1]))
+                enoki_times.append(float(enoki[1]))
                 wenzel_times_static.append(float(wenzel_static[1]))
                 wenzel_times_dynamic.append(float(wenzel_dynamic[1]))
-                # tapenade_times.append(float(tapenade[1]))
+                if tapenade:
+                    tapenade_times.append(float(tapenade[1]))
                 adept_times.append(float(adept[1]))
             
             # print for debug purposes
@@ -218,13 +221,13 @@ if __name__ == "__main__":
             output[func[0]][num_params] = {
                 "us": sum(our_times) / len(our_times),
                 "pytorch": sum(py_times) / len(py_times),
-                # "enoki": sum(enoki_times) / len(enoki_times),
+                "enoki": sum(enoki_times) / len(enoki_times),
                 "wenzel_static": sum(wenzel_times_static) / len(wenzel_times_static),
                 "wenzel_dynamic": sum(wenzel_times_dynamic) / len(wenzel_times_dynamic),
                 "flags": "-ffast-math -O3",
-                # "tapenade": sum(tapenade_times) / len(tapenade_times),
+                "tapenade": sum(tapenade_times) / len(tapenade_times) if tapenade else None,
                 "WENZEL_COMPILER_VERSION": WENZEL_COMPILER_VERSION,
-                # "enoki_speedup": (sum(enoki_times) / len(enoki_times)),
+                "enoki_speedup": (sum(enoki_times) / len(enoki_times)),
                 "wenzel_static_speedup": (sum(wenzel_times_static) / len(wenzel_times_static)),
                 "wenzel_dynamic_speedup": (sum(wenzel_times_dynamic) / len(wenzel_times_dynamic)),
                 "pytorch_speedup": (sum(py_times) / len(py_times)),

@@ -22,6 +22,8 @@ import pytorch_utils
 import enoki_utils
 import generate_function
 
+tapenade = False
+
 
 def generate_params(num_params, function_num):
     # , " which is: ", functions[function_num][0])
@@ -84,10 +86,10 @@ if __name__ == "__main__":
 
     for k in range(1, 11):
         function = generate_function.gen_other(k)
-        functions.append(function)
-        print(function)
+        functions.append(function[0])
+        # print(function)
 
-    print(functions)
+    # print(functions)
 
     INPUT_FILENAME = './tests/utils/hessian/functions.c'
     UTILS_FILENAME = './tests/utils/windows/windows_utils.c'
@@ -105,7 +107,9 @@ if __name__ == "__main__":
 
     for func_num, func in enumerate(functions):
 
-        print(func)
+        # func = func[0]
+
+        print(f'func: {func[0]}')
 
         output[func[0]] = {}
 
@@ -125,22 +129,23 @@ if __name__ == "__main__":
         end_time_us_compile = time.time()
         us_compile_time = (end_time_us_compile - start_time_us_compile)
 
-        # generate and compile tapenade code
-        tapenade_utils.generate_function_c_file(
-            func_num, functions, './tests/utils/tapenade_func.c')
+        if tapenade:
+            # generate and compile tapenade code
+            tapenade_utils.generate_function_c_file(
+                func_num, functions, './tests/utils/tapenade_func.c')
 
-        start_time_tapenade_file_gen = time.time()
-        tapenade_utils.generate_hessian_c_file(func_num)
-        end_time_tapenade_file_gen = time.time()
-        tapenade_file_gen_time = (end_time_tapenade_file_gen - start_time_tapenade_file_gen)
+            start_time_tapenade_file_gen = time.time()
+            tapenade_utils.generate_hessian_c_file(func_num)
+            end_time_tapenade_file_gen = time.time()
+            tapenade_file_gen_time = (end_time_tapenade_file_gen - start_time_tapenade_file_gen)
 
-        tapenade_utils.generate_runnable_tapenade_hess(
-            func[1], len(func[1]), func_num)
+            tapenade_utils.generate_runnable_tapenade_hess(
+                func[1], len(func[1]), func_num)
 
-        start_time_tapenade_compile = time.time()
-        tapenade_utils.compile('./tests/utils/runnable_tapenade_hess')
-        end_time_tapenade_compile = time.time()
-        tapenade_compile_time = (end_time_tapenade_compile - start_time_tapenade_compile)
+            start_time_tapenade_compile = time.time()
+            tapenade_utils.compile('./tests/utils/runnable_tapenade_hess')
+            end_time_tapenade_compile = time.time()
+            tapenade_compile_time = (end_time_tapenade_compile - start_time_tapenade_compile)
 
         while num_params <= MAX_PARAMS:
 
@@ -171,48 +176,45 @@ if __name__ == "__main__":
                     functions[func_num], num_params, functions, PARAMS_FILENAME, OUTPUT_FILENAME,   runnable_filename="./tests/utils/static_code/runnable_hessian")
                 wenzel_static = wenzel_utils.run_wenzel("hessian", True)
                 # wenzel_dynamic = wenzel_utils.run_wenzel("hessian", False)
-                tapenade = tapenade_utils.run_tapenade(functions[func_num], num_params, functions, PARAMS_FILENAME, TAPENADE_OUTPUT, RUNNABLE_TAPENADE)
+                if tapenade:
+                    tapenade = tapenade_utils.run_tapenade(functions[func_num], num_params, functions, PARAMS_FILENAME, TAPENADE_OUTPUT, RUNNABLE_TAPENADE)
 
 
                 # print("Us: {}\n Wenzel Static: {}\n Wenzel Dynamic: {}\n Tapenade: {}".format(ours, wenzel_static, wenzel_dynamic, tapenade))
-                tapenade_times.append(float(tapenade[1]))
+                if tapenade:
+                    tapenade_times.append(float(tapenade[1]))
                 our_times.append(float(ours[1]))
                 py_times.append(float(pytorch[1]))
                 wenzel_times_static.append(float(wenzel_static[1]))
 
             ours_sorted = sorted(ours[0])
-            tapenade_sorted = sorted(tapenade[0])
+            # tapenade_sorted = sorted(tapenade[0])
             # py_sorted = sorted(pytorch[0])
             wenzel_static_sorted = sorted(wenzel_static[0])
 
             # print(ours[0])
 
-            print("Us: {}, Tape: {}".format(len(ours_sorted), len(tapenade_sorted)))
+            # print("Us: {}, Tape: {}".format(len(ours_sorted), len(tapenade_sorted)))
 
-            assert len(ours_sorted) == len(tapenade_sorted) == len(wenzel_static_sorted)
+            # assert len(ours_sorted) == len(tapenade_sorted) == len(wenzel_static_sorted)
 
-            for i in range(len(ours_sorted)):
+            # for i in range(len(ours_sorted)):
                 # print("Us: {}, Tape: {}, WS: {}, WD: {}\n".format(ours_sorted[i], tapenade_sorted[i], wenzel_static_sorted[i], wenzel_dynamic_sorted[i]))
                 # assert math.isclose(float(ours_sorted[i]), float(tapenade_sorted[i]), abs_tol=10**-1)
-                if math.isclose(float(ours_sorted[i]), float(tapenade_sorted[i]), abs_tol=10**-1) == False:
-                    print("Us: {}, Tape: {}".format(ours_sorted[i], tapenade_sorted[i]))
+                # if math.isclose(float(ours_sorted[i]), float(tapenade_sorted[i]), abs_tol=10**-1) == False:
+                    # print("Us: {}, Tape: {}".format(ours_sorted[i], tapenade_sorted[i]))
                 # assert math.isclose(float(tapenade_sorted[i]), float(py_sorted[i]), abs_tol=10**-1)
                 # assert math.isclose(float(py_sorted[i]), float(wenzel_static_sorted[i]), abs_tol=10**-1)
                 # assert math.isclose(float(wenzel_static_sorted[i]), float(wenzel_dynamic_sorted[i]), abs_tol=10**-1)
 
             # print("Us: {}, Tapenade: {}, PyTorch: {}, Wenzel Static: {}, Wenzel Dynamic: {}".format(ours_sorted, tapenade_sorted, py_sorted, wenzel_static_sorted, wenzel_dynamic_sorted))
 
-            # print for debug purposes
-            print("Parameters: ", params[:10])
-            print("ours: ", ours[0][:10])
-            # print("pytorch: ", pytorch[0][:10])
-
             output[func[0]][num_params] = {
                 "us": sum(our_times) / len(our_times),
                 "pytorch": sum(py_times) / len(py_times),
                 "wenzel_static": (sum(wenzel_times_static) / len(wenzel_times_static)),
                 # "wenzel_dynamic": (sum(wenzel_times_dynamic) / len(wenzel_times_dynamic)),
-                "tapenade": sum(tapenade_times) / len(tapenade_times),
+                "tapenade": sum(tapenade_times) / len(tapenade_times) if tapenade else None,
                 "flags": "-ffast-math -O3",
                 "compiler_version": WENZEL_COMPILER_VERSION,
                 "us_file_gen": us_file_gen_time,

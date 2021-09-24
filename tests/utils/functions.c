@@ -1,5 +1,5 @@
-int function_9(double J, double T, double k, double a, double h, double v, double s, double r, double N, double e)
+int function_0(double a, double b, double c, double d, double e, double f, double g, double h, double j, double k, double l, double m, double n, double o, double p, double q, double r, double s, double t, double u, double v, double w, double x, double y, double z)
 {
-	int p = 4*4*4*4*4*4*4*4*4*4*((J * (1 - J))*(T * (1 - T))*(k * (1 - k))*(a * (1 - a))*(h * (1 - h))*(v * (1 - v))*(s * (1 - s))*(r * (1 - r))*(N * (1 - N))*(e * (1 - e)));
+	int p = (a*a+b*b+c*c+d*d)*(1+1/((a*d-b*c)*(a*d-b*c*e*f*g*h*j*k*l*m*n*o*p*q*r*s*t*u*v*w*x*y*z)));
 	return 0;
 }

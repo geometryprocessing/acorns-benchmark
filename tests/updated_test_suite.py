@@ -18,12 +18,11 @@ import wenzel_utils
 import us_utils
 import tapenade_utils
 import adept_utils
-# sys.path.append('acorns')
-# print(sys.path)
+
+tapenade = False
 
 
 def generate_params(num_params, function_num):
-    # , " which is: ", functions[function_num][0])
     print("Generating params for function_num", function_num)
     num_variables = len(functions[function_num][1])
     function_params = np.zeros(shape=(num_variables, num_params))
@@ -88,23 +87,6 @@ def cleanup():
             except Exception as e:
                 print(e)
 
-
-def generate_graph(avg_us, avg_pytorch, avg_wenzel, denom, func_num, function):
-    plt.figure(1)
-    plt.subplot(211)
-    plt.plot(denom, avg_us,
-             denom, avg_pytorch,
-             denom, avg_wenzel)
-    plt.xticks(denom)
-    plt.title('C Code vs Pytorch vs. Wenzel # It: 10')
-    # legend
-    plt.legend(('Ours', 'Pytorch', 'Wenzel'),
-               shadow=True, loc=(0.01, 0.48), handlelength=1.5, fontsize=16)
-    plt.xlabel(function)
-    plt.savefig('./tests/results/graph_{}.png'.format(func_num))
-    plt.clf()
-
-
 if __name__ == "__main__":
     functions = [
         ["((k*k+3*k)-k/4)/k+k*k*k*k+k*k*(22/7*k)+k*k*k*k*k*k*k*k*k", ["k"]],
@@ -156,12 +138,13 @@ if __name__ == "__main__":
         us_utils.compile_ours(RUN_C, RUNNABLE_FILENAME, DERIVATIVES_FILENAME)
 
         # generate and compile tapenade code
-        # tapenade_utils.generate_function_c_file(
-        #     func_num, functions, './tests/utils/tapenade_func.c')
-        # tapenade_utils.generate_derivatives_c_file(func_num)
-        # tapenade_utils.generate_runnable_tapenade(
-        #     func[1], len(func[1]), func_num)
-        # tapenade_utils.compile('./tests/utils/runnable_tapenade')
+        if(tapenade):
+            tapenade_utils.generate_function_c_file(
+                func_num, functions, './tests/utils/tapenade_func.c')
+            tapenade_utils.generate_derivatives_c_file(func_num)
+            tapenade_utils.generate_runnable_tapenade(
+                func[1], len(func[1]), func_num)
+            tapenade_utils.compile('./tests/utils/runnable_tapenade')
 
         while num_params <= 100000:
 
@@ -196,7 +179,7 @@ if __name__ == "__main__":
             wenzel_times_static = []
             wenzel_times_dynamic = []
             enoki_times = []
-            # tapenade_times = []
+            tapenade_times = []
             adept_times = []
 
             for i in range(NUM_ITERATIONS):
@@ -204,27 +187,27 @@ if __name__ == "__main__":
                 ours = us_utils.run_ours(
                     functions[func_num], num_params, functions, PARAMS_FILENAME, OUTPUT_FILENAME, RUNNABLE_FILENAME)
                 enoki = enoki_utils.run_enoki()
-                # tapenade = tapenade_utils.run_tapenade(
-                #      functions[func_num], num_params, functions, PARAMS_FILENAME, TAPENADE_OUTPUT, RUNNABLE_TAPENADE)
+                if tapenade:
+                    tapenade = tapenade_utils.run_tapenade(
+                        functions[func_num], num_params, functions, PARAMS_FILENAME, TAPENADE_OUTPUT, RUNNABLE_TAPENADE)
                 wenzel_static = wenzel_utils.run_wenzel("single", True)
                 wenzel_dynamic = wenzel_utils.run_wenzel("single", False)
                 adept = adept_utils.run_adept()
                 pytorch = pytorch_utils.run_pytorch()
 
-                # print("Pytorch: {}\n Us: {}\n Enoki: {}\n Wenzel Static: {}\n Wenzel Dynamic: {}".format(
-                #     pytorch, ours, enoki, wenzel_static, wenzel_dynamic))
-
-                for j in range(len(ours[0])):
-                    # print("Pytorch: {}\n Us: {}\n Enoki: {}\n Tapenade: {}\n Wenzel Static: {}\n Wenzel Dynamic {}".format( float(pytorch([0][j]), float(ours[0][j]), float(enoki[0][j]), float(tapenade[0][j]), float(wenzel_static[0][j]), float(wenzel_dynamic[0][j]))))
-                    # assert math.isclose(float(pytorch[0][j]), float(wenzel_static[0][j]), abs_tol=10**1)
-                    assert math.isclose(float(wenzel_static[0][j]), float(ours[0][j]), abs_tol=10**1)
-                    # assert math.isclose(float(ours[0][j]), float(enoki[0][j]), abs_tol=10**1)
-                    # assert math.isclose(float(ours[0][j]), float(tapenade[0][j]), abs_tol=10**1)
-                    assert math.isclose(float(ours[0][j]), float(adept[0][j]), abs_tol=10**1)
+                # for j in range(len(ours[0])):
+                #     print(f'Us: {ours[0][j]}, Pytorch: {pytorch[0][j]}, Wenzel: {wenzel_static[0][j]}, Enoki: {enoki[0][j]}, Adept: {adept[0][j]}')
+                #     # assert math.isclose(float(pytorch[0][j]), float(wenzel_static[0][j]), abs_tol=10**1)
+                #     assert math.isclose(float(wenzel_static[0][j]), float(ours[0][j]), abs_tol=10**1)
+                #     assert math.isclose(float(ours[0][j]), float(enoki[0][j]), abs_tol=10**1)
+                #     if tapenade:
+                #         assert math.isclose(float(ours[0][j]), float(tapenade[0][j]), abs_tol=10**1)
+                #     assert math.isclose(float(ours[0][j]), float(adept[0][j]), abs_tol=10**1)
                 our_times.append(float(ours[1]))
                 py_times.append(float(pytorch[1]))
                 enoki_times.append(float(enoki[1]))
-                # tapenade_times.append(float(tapenade[1]))
+                if tapenade:
+                    tapenade_times.append(float(tapenade[1]))
                 wenzel_times_static.append(float(wenzel_static[1]))
                 wenzel_times_dynamic.append(float(wenzel_dynamic[1]))
                 adept_times.append(float(adept[1]))
@@ -239,7 +222,7 @@ if __name__ == "__main__":
                 "wenzel_static": (sum(wenzel_times_static) / len(wenzel_times_static)),
                 "wenzel_dynamic": (sum(wenzel_times_dynamic) / len(wenzel_times_dynamic)),
                 "flags": "-ffast-math -O3",
-                # "tapenade": sum(tapenade_times) / len(tapenade_times),
+                "tapenade": sum(tapenade_times) / len(tapenade_times) if tapenade else None,
                 "compiler_version": WENZEL_COMPILER_VERSION,
                 "adept": sum(adept_times) / len(adept_times)
             }
