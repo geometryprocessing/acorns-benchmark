@@ -4,15 +4,9 @@ This contains all of the code used to generate JSON benchmarks and graphs for AC
 
 ### About acorns
 
-Home: https://github.com/deshanadesai/acorns
+Please refer to the following repo for the package: https://github.com/deshanadesai/acorns
 
-Package license: MIT
-
-Feedstock license: BSD 3-Clause
-
-Summary: An easy-to-use Code Generator for Gradients and Hessians
-
-ACORNS is an algorithm for automatic differention of algorithms written in a subset of C99 code and its efficient implementation as a Python script.
+This is NOT the repository for the acorns library. And is not maintained. This repository only contains code for the benchmarks for comparisons with other methods.
 
 ### Prerequisites
 
