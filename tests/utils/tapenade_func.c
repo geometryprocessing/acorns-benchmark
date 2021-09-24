@@ -1,5 +1,5 @@
-double function_0(double w)
+double function_0(double k)
 {
-double p = 4*((w * (1 - w)));
+double p = ((k*k+3*k)-k/4)/k+k*k*k*k+k*k*(22/7*k)+k*k*k*k*k*k*k*k*k;
 	return p;
 }

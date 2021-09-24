@@ -19,7 +19,7 @@ import us_utils
 import tapenade_utils
 import adept_utils
 
-tapenade = False
+tapenade = True
 
 
 def generate_params(num_params, function_num):

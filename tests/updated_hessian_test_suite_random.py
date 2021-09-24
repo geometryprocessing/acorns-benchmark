@@ -22,7 +22,7 @@ import pytorch_utils
 import enoki_utils
 import generate_function
 
-tapenade = False
+tapenade = True
 
 
 def generate_params(num_params, function_num):

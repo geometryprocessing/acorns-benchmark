@@ -58,6 +58,20 @@ function present:
                  none(),
                  none())
 
+function precision:
+  intrinsic:
+  shape: (param 1, result)
+  type: (float(), integer())
+  ReadNotWritten: (0, 0)
+  NotReadThenWritten: (0, 1)
+
+function range:
+  intrinsic:
+  shape: (param 1, result)
+  type: (float(), integer())
+  ReadNotWritten: (0, 0)
+  NotReadThenWritten: (0, 1)
+
 function spread:
   intrinsic:
   shape: (param 1, param 2, param 3, result)

@@ -20,7 +20,7 @@ import generate_function
 import tapenade_utils
 import adept_utils
 
-tapenade = False
+tapenade = True
 
 def generate_params(num_params, function_num):
     print("Generating params for function_num", function_num) #, " which is: ", functions[function_num][0])

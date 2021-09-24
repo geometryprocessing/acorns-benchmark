@@ -17,7 +17,7 @@ int main(int argc, char **argv)
 
    typedef DScalar1<double, Gradient> DScalar;
 
-   int num_params = 20010;
+   int num_params = 4010;
    int num_vars = 1;
 
    Eigen::VectorXd args(num_params * num_vars);

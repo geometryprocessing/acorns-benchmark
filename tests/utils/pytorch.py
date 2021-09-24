@@ -4,7 +4,7 @@ import time
 import os
 os.environ['NPY_MKL_FORCE_INTEL'] = 'GNU'
 
-num_params = 20010
+num_params = 4010
 k = torch.tensor(np.load('./tests/utils/numpy_params/function_0_param_k.npy'), requires_grad=True, dtype=torch.float)
 torch.set_num_threads(1)
 y = (((k*k+3*k)-k/4)/k+k*k*k*k+k*k*(22/7*k)+k*k*k*k*k*k*k*k*k).sum()

@@ -13,7 +13,7 @@ int main(int argc, char **argv)
    string output_filename = argv[1];
    cout << output_filename << endl;
 
-   int num_params = 20010;
+   int num_params = 4010;
    int num_vars = 1;
 
    Stack stack;

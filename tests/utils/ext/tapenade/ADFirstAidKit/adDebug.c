@@ -340,59 +340,178 @@ void dbad_display_location(char *placename) {
  }
 }
 
-void dbad_adDebugTgt_testReal8(char* varname, double var, double vard, int conclude) {
+void dbad_adDebugTgt_testComplex16(char* varname, cdcmplx var, cdcmplx *vard, int conclude) {
   if (dbad_testThisProcess!=-2) {
-    double varb = 0.0 ;
-    if (conclude) varb = dbad_nextRandom() ;
+    if (dbad_phase==1) {
+      dbad_putOneVarName(varname) ;
+      dbad_putOne8(var.dr) ;
+      dbad_putOne8(var.di) ;
+    } else if (dbad_phase==2) {
+      cdcmplx ddvar, dd ;
+      float diffR, diffI ;
+      int hasDifferenceR, hasDifferenceI ;
+      dbad_ddcheckvarname(varname) ;
+      dbad_getOne8(&(ddvar.dr)) ;
+      dbad_getOne8(&(ddvar.di)) ;
+      hasDifferenceR = dbad_discrepancy8(ddvar.dr, var.dr, vard->dr, &(dd.dr), &diffR) ;
+      hasDifferenceI = dbad_discrepancy8(ddvar.di, var.di, vard->di, &(dd.di), &diffI) ;
+      if (dbad_trace) {
+        printf("%s [v-eps:(%24.16e,%24.16e) v-loc:(%24.16e,%24.16e)] (%24.16e,%24.16e)(dd (%5.1f,%5.1f)%% DIFF? WITH ad)(%24.16e,%24.16e)\n",
+               varname,ddvar.dr,ddvar.di,var.dr,var.di,dd.dr,dd.di,diffR,diffI,vard->dr,vard->di) ;
+      } else if (hasDifferenceR||hasDifferenceI) {
+        printf("%s (%24.16e,%24.16e)(dd (%5.1f,%5.1f)%% DIFF WITH ad)(%24.16e,%24.16e)\n",
+               varname,dd,dd,diffR,diffI,vard->dr,vard->di) ;
+      }
+      if (conclude==-1) {
+        if (hasDifferenceR) {
+          vard->dr = dd.dr ;
+          printf("%s (.real) RESET:\n", varname) ;
+        }
+        if (hasDifferenceI) {
+          vard->di = dd.di ;
+          printf("%s (.imag) RESET:\n", varname) ;
+        }
+      }
+      if (conclude==1) {
+        cdcmplx varb ;
+        varb.dr = dbad_nextRandom();
+        varb.di = dbad_nextRandom();
+        dbad_condensed_dd  += dd.dr*varb.dr   + dd.di*varb.di;
+        dbad_condensed_tgt += vard->dr*varb.dr + vard->di*varb.di;
+      }
+    }
+  }
+}
+
+void dbad_adDebugTgt_testReal8(char* varname, double var, double *vard, int conclude) {
+  if (dbad_testThisProcess!=-2) {
     if (dbad_phase==1) {
       dbad_putOneVarName(varname) ;
       dbad_putOne8(var) ;
     } else if (dbad_phase==2) {
       double ddvar, dd ;
       float diff ;
-      int hasDifference ;
       dbad_ddcheckvarname(varname) ;
       dbad_getOne8(&ddvar) ;
-      hasDifference = dbad_discrepancy8(ddvar, var, vard, &dd, &diff) ;
+      int hasDifference = dbad_discrepancy8(ddvar, var, *vard, &dd, &diff) ;
       if (dbad_trace) {
         printf("%s [v-eps:%24.16e v-loc:%24.16e] %24.16e(dd %5.1f%% DIFF? WITH ad)%24.16e\n",
-               varname,ddvar,var,dd,diff,vard) ;
+               varname,ddvar,var,dd,diff,*vard) ;
       } else if (hasDifference) {
         printf("%s %24.16e(dd %5.1f%% DIFF WITH ad)%24.16e\n",
-               varname,dd,diff,vard) ;
+               varname,dd,diff,*vard) ;
       }
-      if (conclude) {
+      if (conclude==-1 && hasDifference) {
+        *vard = dd ;
+        printf("%s RESET:\n", varname) ;
+      }
+      if (conclude==1) {
+        double varb = dbad_nextRandom() ;
         dbad_condensed_dd += dd*varb;
-        dbad_condensed_tgt += vard*varb;
+        dbad_condensed_tgt += *vard*varb;
       }
     }
   }
 }
 
-void dbad_adDebugTgt_testReal4(char* varname, float var, float vard, int conclude) {
+void dbad_adDebugTgt_testReal4(char* varname, float var, float *vard, int conclude) {
   if (dbad_testThisProcess!=-2) {
-    double varb = 0.0 ;
-    if (conclude) varb = dbad_nextRandom() ;
     if (dbad_phase==1) {
       dbad_putOneVarName(varname) ;
       dbad_putOne4(var) ;
     } else if (dbad_phase==2) {
       float ddvar, dd ;
       float diff ;
-      int hasDifference;
       dbad_ddcheckvarname(varname) ;
       dbad_getOne4(&ddvar) ;
-      hasDifference = dbad_discrepancy4(ddvar, var, vard, &dd, &diff) ;
+      int hasDifference = dbad_discrepancy4(ddvar, var, *vard, &dd, &diff) ;
       if (dbad_trace) {
         printf("%s [v-eps:%18.10e v-loc:%18.10e] %18.10e(dd %5.1f%% DIFF? WITH ad)%18.10e\n",
-               varname,ddvar,var,dd,diff,vard) ;
+               varname,ddvar,var,dd,diff,*vard) ;
       } else if (hasDifference) {
         printf("%s %18.10e(dd %5.1f%% DIFF WITH ad)%18.10e\n",
-               varname,dd,diff,vard) ;
+               varname,dd,diff,*vard) ;
       }
-      if (conclude) {
+      if (conclude==-1 && hasDifference) {
+        *vard = dd ;
+        printf("%s RESET:\n", varname) ;
+      }
+      if (conclude==1) {
+        double varb = dbad_nextRandom() ;
         dbad_condensed_dd += ((double)dd)*varb;
-        dbad_condensed_tgt += ((double)vard)*varb;
+        dbad_condensed_tgt += ((double)*vard)*varb;
+      }
+    }
+  }
+}
+
+void dbad_adDebugTgt_testComplex16Array(char* varname, cdcmplx* var, cdcmplx* vard, int length, int conclude) {
+  if (!var || !vard) return ;
+  if (dbad_testThisProcess!=-2) {
+    int i ;
+    if (dbad_phase==1) {
+      dbad_putOneVarName(varname) ;
+      for (i=0 ; i<length ; ++i) {
+        dbad_putOne8(var[i].dr) ;
+        dbad_putOne8(var[i].di) ;
+      }
+    } else if (dbad_phase==2) {
+      cdcmplx ddvar, dd, vardbuf[10], ddbuf[10], varepsbuf[10], varlocbuf[10] ;
+      float diffR, diffI ;
+      int hasDifferenceR, hasDifferenceI, printedheader = 0, indexbuf[10], ibuf = 0 ;
+      dbad_ddcheckvarname(varname) ;
+      for (i=0 ; i<length ; ++i) {
+        dbad_getOne8(&ddvar.dr) ;
+        dbad_getOne8(&ddvar.di) ;
+        hasDifferenceR = dbad_discrepancy8(ddvar.dr, var[i].dr, vard[i].dr, &(dd.dr), &diffR) ;
+        hasDifferenceI = dbad_discrepancy8(ddvar.di, var[i].di, vard[i].di, &(dd.di), &diffI) ;
+        if (hasDifferenceR || hasDifferenceI || dbad_trace) {
+          if (dbad_trace) {
+            varepsbuf[ibuf] = ddvar ;
+            varlocbuf[ibuf] = var[i] ;
+          }
+          vardbuf[ibuf] = vard[i] ;
+          ddbuf[ibuf] = dd ;
+          indexbuf[ibuf] = i ;
+          ++ibuf ;
+        }
+        if (conclude==-1) { //Nudge the ad derivative back to divided-diff value!
+          if (hasDifferenceR) vard[i].dr = dd.dr ;
+          if (hasDifferenceI) vard[i].di = dd.di ;
+        }
+        if (ibuf>=5 || (i==length-1 && ibuf>0)) {
+          int j ;
+          if (!printedheader) {
+            if (conclude==-1)
+              printf("%s RESET:\n", varname) ;
+            else
+              printf("%s DIFFS:\n", varname) ;
+            printedheader = 1 ;
+          }
+          printf("    ") ;
+          for (j=0 ; j<ibuf ; ++j)
+            printf(" %4i->(%11.4e,%11.4e)", indexbuf[j], vardbuf[j].dr, vardbuf[j].di) ;
+          printf("\n    ") ;
+          if (dbad_trace) {
+            for (j=0 ; j<ibuf ; ++j)
+              printf("  (eps)(%11.4e,%11.4e)", varepsbuf[j].dr, varepsbuf[j].di) ;
+            printf("\n    ") ;
+            for (j=0 ; j<ibuf ; ++j)
+              printf("  (loc)(%11.4e,%11.4e)", varlocbuf[j].dr, varlocbuf[j].di) ;
+            printf("\n    ") ;
+          }
+          for (j=0 ; j<ibuf ; ++j)
+            printf("  (dd:)(%11.4e,%11.4e)", ddbuf[j].dr, ddbuf[j].di) ;
+          printf("\n") ;
+          ibuf = 0 ;
+        }
+        if (conclude==1) {
+          cdcmplx varb ;
+          varb.dr = dbad_nextRandom();
+          varb.di = dbad_nextRandom();
+          dbad_condensed_dd  += dd.dr*varb.dr      + dd.di*varb.di ;
+          dbad_condensed_tgt += vard[i].dr*varb.dr + vard[i].di*varb.di ;
+        }
       }
     }
   }
@@ -402,11 +521,9 @@ void dbad_adDebugTgt_testReal8Array(char* varname, double* var, double* vard, in
   if (!var || !vard) return ;
   if (dbad_testThisProcess!=-2) {
     int i ;
-    double varb ;
     if (dbad_phase==1) {
       dbad_putOneVarName(varname) ;
       for (i=0 ; i<length ; ++i) {
-        if (conclude==1) varb = dbad_nextRandom() ;
         dbad_putOne8(var[i]) ;
       }
     } else if (dbad_phase==2) {
@@ -415,14 +532,13 @@ void dbad_adDebugTgt_testReal8Array(char* varname, double* var, double* vard, in
       int hasDifference, printedheader = 0, indexbuf[10], ibuf = 0 ;
       dbad_ddcheckvarname(varname) ;
       for (i=0 ; i<length ; ++i) {
-        if (conclude==1) varb = dbad_nextRandom() ;
         dbad_getOne8(&ddvar) ;
         hasDifference = dbad_discrepancy8(ddvar, var[i], vard[i], &dd, &diff) ;
+        if (dbad_trace) {
+          varepsbuf[ibuf] = ddvar ;
+          varlocbuf[ibuf] = var[i] ;
+        }
         if (hasDifference || dbad_trace) {
-          if (dbad_trace) {
-            varepsbuf[ibuf] = ddvar ;
-            varlocbuf[ibuf] = var[i] ;
-          }
           vardbuf[ibuf] = vard[i] ;
           ddbuf[ibuf] = dd ;
           indexbuf[ibuf] = i ;
@@ -458,6 +574,7 @@ void dbad_adDebugTgt_testReal8Array(char* varname, double* var, double* vard, in
           ibuf = 0 ;
         }
         if (conclude==1) {
+          double varb = dbad_nextRandom() ;
           dbad_condensed_dd += dd*varb;
           dbad_condensed_tgt += vard[i]*varb;
         }
@@ -470,11 +587,9 @@ void dbad_adDebugTgt_testReal4Array(char* varname, float* var, float* vard, int 
   if (!var || !vard) return ;
   if (dbad_testThisProcess!=-2) {
     int i ;
-    double varb ;
     if (dbad_phase==1) {
       dbad_putOneVarName(varname) ;
       for (i=0 ; i<length ; ++i) {
-        if (conclude) varb = dbad_nextRandom() ;
         dbad_putOne4(var[i]) ;
       }
     } else if (dbad_phase==2) {
@@ -483,23 +598,28 @@ void dbad_adDebugTgt_testReal4Array(char* varname, float* var, float* vard, int 
       int hasDifference, printedheader = 0, indexbuf[10], ibuf = 0 ;
       dbad_ddcheckvarname(varname) ;
       for (i=0 ; i<length ; ++i) {
-        if (conclude) varb = dbad_nextRandom() ;
         dbad_getOne4(&ddvar) ;
         hasDifference = dbad_discrepancy4(ddvar, var[i], vard[i], &dd, &diff) ;
+        if (dbad_trace) {
+          varepsbuf[ibuf] = ddvar ;
+          varlocbuf[ibuf] = var[i] ;
+        }
         if (hasDifference || dbad_trace) {
-          if (dbad_trace) {
-            varepsbuf[ibuf] = ddvar ;
-            varlocbuf[ibuf] = var[i] ;
-          }
           vardbuf[ibuf] = vard[i] ;
           ddbuf[ibuf] = dd ;
           indexbuf[ibuf] = i ;
           ++ibuf ;
         }
+        if (conclude==-1 && hasDifference) { //Nudge the ad derivative back to divided-diff value!
+          vard[i] = dd ;
+        }
         if (ibuf>=10 || (i==length-1 && ibuf>0)) {
           int j ;
           if (!printedheader) {
-            printf("%s:\n", varname) ;
+            if (conclude==-1)
+              printf("%s RESET:\n", varname) ;
+            else
+              printf("%s DIFFS:\n", varname) ;
             printedheader = 1 ;
           }
           printf("    ") ;
@@ -519,7 +639,8 @@ void dbad_adDebugTgt_testReal4Array(char* varname, float* var, float* vard, int 
           printf("\n") ;
           ibuf = 0 ;
         }
-        if (conclude) {
+        if (conclude==1) {
+          double varb = dbad_nextRandom() ;
           dbad_condensed_dd += ((double)dd)*varb;
           dbad_condensed_tgt += ((double)vard[i])*varb;
         }
@@ -632,6 +753,18 @@ int adDebugTgt_here(char* placename, int forcetraced) {
   }
 }
 
+void adDebugTgt_initComplex16(char* varname, cdcmplx *indep, cdcmplx *indepd) {
+  indepd->dr = dbad_nextRandom() ;
+  indepd->di = dbad_nextRandom() ;
+/*   dbad_scaleIndepDirection??(indepd, *indep) ; // One may prefer to comment this line out... */
+  if (dbad_phase==1) {
+    indep->dr = (indep->dr)+dbad_ddeps*(indepd->dr) ;
+    indep->di = (indep->di)+dbad_ddeps*(indepd->di) ;
+  }
+  if (dbad_trace)
+    printf("initComplex16 of %s: (%24.16e,%24.16e) //(%24.16e,%24.16e)\n", varname, indep->dr, indep->di, indepd->dr, indepd->di) ;
+}
+
 void adDebugTgt_initReal8(char* varname, double *indep, double *indepd) {
   *indepd = dbad_nextRandom() ;
 /*   dbad_scaleIndepDirection8(indepd, *indep) ; // One may prefer to comment this line out... */
@@ -648,6 +781,30 @@ void adDebugTgt_initReal4(char* varname, float *indep, float *indepd) {
     *indep = (*indep)+dbad_ddeps*(*indepd) ;
   if (dbad_trace)
     printf("initReal4 of %s: %24.16e //%24.16e\n", varname, (double)*indep, (double)*indepd) ;
+}
+
+void adDebugTgt_initComplex16Array(char* varname, cdcmplx *indep, cdcmplx *indepd, int length) {
+  if (!indep || !indepd) return ;
+  int i ;
+  for (i=0 ; i<length ; ++i) {
+    indepd[i].dr = dbad_nextRandom() ;
+    indepd[i].di = dbad_nextRandom() ;
+/* printf("nextRandom %i (%24.16e,%24.16e)\n", i, indepd[i].dr, indepd[i].di) ; */
+/*     dbad_scaleIndepDirection??(&indepd[i], indep[i]) ; // One may prefer to comment this line out... */
+/* printf(" -> scaled %i (%24.16e,%24.16e)\n", i, indepd[i].dr, indepd[i].di) ; */
+  }
+  if (dbad_phase==1) {
+    for (i=0 ; i<length ; ++i) {
+      indep[i].dr += dbad_ddeps*indepd[i].dr ;
+      indep[i].di += dbad_ddeps*indepd[i].di ;
+    }
+  }
+  if (dbad_trace) {
+    printf("initComplex16Array of %s, length=%i:\n", varname, length) ;
+    for (i=0 ; i<length ; ++i)
+      printf("    %i:(%24.16e,%24.16e) //(%24.16e,%24.16e)",i,indep[i].dr,indep[i].di,indepd[i].dr,indepd[i].di) ;
+    printf("\n") ;
+  }
 }
 
 void adDebugTgt_initReal8Array(char* varname, double *indep, double *indepd, int length) {
@@ -692,6 +849,28 @@ void adDebugTgt_initReal4Array(char* varname, float *indep, float *indepd, int l
   }
 }
 
+void adDebugTgt_passiveComplex16(char *varname, cdcmplx var) {
+  if (dbad_testThisProcess!=-2) {
+    if (dbad_phase==1) {
+      dbad_putOneVarName(varname) ;
+      dbad_putOne8(var.dr) ;
+      dbad_putOne8(var.di) ;
+    } else if (dbad_phase==2) {
+      cdcmplx ddvar ;
+      dbad_ddcheckvarname(varname) ;
+      dbad_getOne8(&(ddvar.dr)) ;
+      dbad_getOne8(&(ddvar.di)) ;
+      if (dbad_trace) {
+        printf("passiveComplex16 %s v-eps:(%24.16e,%24.16e) v-loc:(%24.16e,%24.16e) are %s\n",
+               varname,ddvar.dr,ddvar.di,var.dr,var.di,(ddvar.dr==var.dr && ddvar.di==var.di?"equal":"different")) ;
+      } else if (ddvar.dr!=var.dr || ddvar.di!=var.di) {
+        printf("passiveComplex16 %s appears to be varied (v-eps:(%24.16e,%24.16e) v-loc:(%24.16e,%24.16e)). Hope it is really not useful!\n",
+               varname,ddvar.dr,ddvar.di,var.dr,var.di) ;
+      }
+    }
+  }
+}
+
 void adDebugTgt_passiveReal8(char *varname, double var) {
   if (dbad_testThisProcess!=-2) {
     if (dbad_phase==1) {
@@ -713,7 +892,35 @@ void adDebugTgt_passiveReal8(char *varname, double var) {
 }
 
 void adDebugTgt_passiveReal4(char *varname, float var) {
-  adDebugTgt_passiveReal8(varname, (double)var) ;
+  if (dbad_testThisProcess!=-2) {
+    if (dbad_phase==1) {
+      dbad_putOneVarName(varname) ;
+      dbad_putOne4(var) ;
+    } else if (dbad_phase==2) {
+      float ddvar ;
+      dbad_ddcheckvarname(varname) ;
+      dbad_getOne4(&ddvar) ;
+      if (dbad_trace) {
+        printf("passiveReal4 %s v-eps:%18.10 v-loc:%18.10 are %s\n",
+               varname,ddvar,var,(ddvar==var?"equal":"different")) ;
+      } else if (ddvar!=var) {
+        printf("passiveReal4 %s appears to be varied (v-eps:%18.10 v-loc:%18.10). Hope it is really not useful!\n",
+               varname,ddvar,var) ;
+      }
+    }
+  }
+}
+
+void adDebugTgt_passiveComplex16Array(char *varname, cdcmplx *var, int length) {
+  if (!var) return;
+  if (dbad_testThisProcess!=-2) {
+    int i ;
+    double varsum = 0.0 ;
+    for (i=0 ; i<length ; ++i) {
+      varsum += var[i].dr + var[i].di ;
+    }
+    adDebugTgt_passiveReal8(varname, varsum) ;
+  }
 }
 
 void adDebugTgt_passiveReal8Array(char *varname, double *var, int length) {
@@ -732,37 +939,52 @@ void adDebugTgt_passiveReal4Array(char *varname, float *var, int length) {
   if (!var) return;
   if (dbad_testThisProcess!=-2) {
     int i ;
-    double varsum = 0.0 ;
+    float varsum = 0.0 ;
     for (i=0 ; i<length ; ++i) {
-      varsum += (double)var[i] ;
+      varsum += var[i] ;
     }
-    adDebugTgt_passiveReal8(varname, varsum) ;
+    adDebugTgt_passiveReal4(varname, varsum) ;
   }
 }
 
-void adDebugTgt_testReal8(char *varname, double var, double vard) {
-  dbad_adDebugTgt_testReal8(varname, var, vard, 0) ;
+void adDebugTgt_testComplex16(char *varname, cdcmplx var, cdcmplx *vard) {
+  dbad_adDebugTgt_testComplex16(varname, var, vard, 0) ; //replace 0 with -1 to nudge vard
 }
 
-void adDebugTgt_testReal4(char *varname, float var, float vard) {
-  dbad_adDebugTgt_testReal4(varname, var, vard, 0) ;
+void adDebugTgt_testReal8(char *varname, double var, double *vard) {
+  dbad_adDebugTgt_testReal8(varname, var, vard, 0) ; //replace 0 with -1 to nudge vard
+}
+
+void adDebugTgt_testReal4(char *varname, float var, float *vard) {
+  dbad_adDebugTgt_testReal4(varname, var, vard, 0) ; //replace 0 with -1 to nudge vard
+}
+
+void adDebugTgt_testComplex16Array(char *varname, cdcmplx* var, cdcmplx* vard, int length) {
+  dbad_adDebugTgt_testComplex16Array(varname, var, vard, length, 0) ;
 }
 
 void adDebugTgt_testReal8Array(char *varname, double* var, double* vard, int length) {
-//printf(" T :%24.16e d:%24.16e\n", var[0], vard[0]) ;
-  dbad_adDebugTgt_testReal8Array(varname, var, vard, length, 0) ;
+  dbad_adDebugTgt_testReal8Array(varname, var, vard, length, 0) ; //replace 0 with -1 to nudge vard
 }
 
 void adDebugTgt_testReal4Array(char *varname, float* var, float* vard, int length) {
-  dbad_adDebugTgt_testReal4Array(varname, var, vard, length, 0) ;
+  dbad_adDebugTgt_testReal4Array(varname, var, vard, length, 0) ; //replace 0 with -1 to nudge vard
 }
 
-void adDebugTgt_concludeReal8(char* varname, double var, double vard) {
+void adDebugTgt_concludeComplex16(char* varname, cdcmplx var, cdcmplx *vard) {
+  dbad_adDebugTgt_testComplex16(varname, var, vard, 1) ;
+}
+
+void adDebugTgt_concludeReal8(char* varname, double var, double *vard) {
   dbad_adDebugTgt_testReal8(varname, var, vard, 1) ;
 }
 
-void adDebugTgt_concludeReal4(char* varname, float dep, float depd) {
-  adDebugTgt_concludeReal8(varname, (double)dep, (double)depd) ;
+void adDebugTgt_concludeReal4(char* varname, float var, float *vard) {
+  dbad_adDebugTgt_testReal4(varname, var, vard, 1) ;
+}
+
+void adDebugTgt_concludeComplex16Array(char* varname, cdcmplx *var, cdcmplx *vard, int length) {
+  dbad_adDebugTgt_testComplex16Array(varname, var, vard, length, 1) ;
 }
 
 void adDebugTgt_concludeReal8Array(char* varname, double *var, double *vard, int length) {
@@ -1021,6 +1243,14 @@ int adDebugFwd_here(char* placename) {
 
 //############## DEBUG OF ADJOINT, FOR BOTH SWEEPS: ################
 
+void adDebugAdj_rwComplex16(cdcmplx *vard) {
+  double varbR = dbad_nextRandom() ;
+  double varbI = dbad_nextRandom() ;
+  dbad_condensed_adj += varbR*(vard->dr) + varbI*(vard->di) ;
+  vard->dr = varbR ;
+  vard->di = varbI ;
+}
+
 void adDebugAdj_rwReal8(double *vard) {
   double varb = dbad_nextRandom() ;
   dbad_condensed_adj += varb*(*vard) ;
@@ -1033,20 +1263,31 @@ void adDebugAdj_rwReal4(float *vard) {
   *vard = (float)varb ;
 }
 
+void adDebugAdj_rComplex16(cdcmplx *vard) {
+  double varbR = dbad_nextRandom() ;
+  double varbI = dbad_nextRandom() ;
+  dbad_condensed_adj += varbR*(vard->dr) + varbI*(vard->di) ;
+}
+
 /** Although at present this routine doesn't modify its argument,
- * we still expect a reference, just in case, and for consistency
- * with adDebugAdj_wReal8() */
+ * we still expect a reference for consistency
+ * with adDebugAdj_wReal8() and also adDebugAdj_rComplex16() */
 void adDebugAdj_rReal8(double *vard) {
   double varb = dbad_nextRandom() ;
   dbad_condensed_adj += varb*(*vard) ;
 }
 
 /** Although at present this routine doesn't modify its argument,
- * we still expect a reference, just in case, and for consistency
- * with adDebugAdj_wReal4() */
+ * we still expect a reference for consistency
+ * with adDebugAdj_wReal4() and also adDebugAdj_rComplex16() */
 void adDebugAdj_rReal4(float *vard) {
   double varb = dbad_nextRandom() ;
   dbad_condensed_adj += varb*(*vard) ;
+}
+
+void adDebugAdj_wComplex16(cdcmplx *vard) {
+  vard->dr = dbad_nextRandom() ;
+  vard->di = dbad_nextRandom() ;
 }
 
 void adDebugAdj_wReal8(double *vard) {
@@ -1055,6 +1296,13 @@ void adDebugAdj_wReal8(double *vard) {
 
 void adDebugAdj_wReal4(float *vard) {
   *vard = (float)dbad_nextRandom() ;
+}
+
+void adDebugAdj_rwComplex16Array(cdcmplx *vard, int length) {
+  int i ;
+  if (vard)
+    for (i=0 ; i<length ; ++i)
+      adDebugAdj_rwComplex16(&(vard[i])) ;
 }
 
 void adDebugAdj_rwReal8Array(double *vard, int length) {
@@ -1071,6 +1319,13 @@ void adDebugAdj_rwReal4Array(float *vard, int length) {
       adDebugAdj_rwReal4(&(vard[i])) ;
 }
 
+void adDebugAdj_rComplex16Array(cdcmplx *vard, int length) {
+  int i ;
+  if (vard)
+    for (i=0 ; i<length ; ++i)
+      adDebugAdj_rComplex16(&(vard[i])) ;
+}
+
 void adDebugAdj_rReal8Array(double *vard, int length) {
   int i ;
   if (vard)
@@ -1083,6 +1338,13 @@ void adDebugAdj_rReal4Array(float *vard, int length) {
   if (vard)
     for (i=0 ; i<length ; ++i)
       adDebugAdj_rReal4(&(vard[i])) ;
+}
+
+void adDebugAdj_wComplex16Array(cdcmplx *vard, int length) {
+  int i ;
+  if (vard)
+    for (i=0 ; i<length ; ++i)
+      adDebugAdj_wComplex16(&(vard[i])) ;
 }
 
 void adDebugAdj_wReal8Array(double *vard, int length) {
@@ -1199,12 +1461,20 @@ int addebugtgt_here_(char* placename, int *forcetraced) {
   return adDebugTgt_here(placename, *forcetraced) ;
 }
 
+void addebugtgt_initcomplex16_(char* varname, cdcmplx *indep, cdcmplx *indepd) {
+  adDebugTgt_initComplex16(varname, indep, indepd) ;
+}
+
 void addebugtgt_initreal8_(char* varname, double *indep, double *indepd) {
   adDebugTgt_initReal8(varname, indep, indepd) ;
 }
 
 void addebugtgt_initreal4_(char* varname, float *indep, float *indepd) {
   adDebugTgt_initReal4(varname, indep, indepd) ;
+}
+
+void addebugtgt_initcomplex16array_(char* varname, cdcmplx *indep, cdcmplx *indepd, int *length) {
+  adDebugTgt_initComplex16Array(varname, indep, indepd, *length) ;
 }
 
 void addebugtgt_initreal8array_(char* varname, double *indep, double *indepd, int *length) {
@@ -1215,12 +1485,20 @@ void addebugtgt_initreal4array_(char* varname, float *indep, float *indepd, int 
   adDebugTgt_initReal4Array(varname, indep, indepd, *length) ;
 }
 
+void addebugtgt_passivecomplex16_(char *varname, cdcmplx *var) {
+  adDebugTgt_passiveComplex16(varname, *var) ;
+}
+
 void addebugtgt_passivereal8_(char *varname, double *var) {
   adDebugTgt_passiveReal8(varname, *var) ;
 }
 
 void addebugtgt_passivereal4_(char *varname, float *var) {
   adDebugTgt_passiveReal4(varname, *var) ;
+}
+
+void addebugtgt_passivecomplex16array_(char *varname, cdcmplx *var, int *length) {
+  adDebugTgt_passiveComplex16Array(varname, var, *length) ;
 }
 
 void addebugtgt_passivereal8array_(char *varname, double *var, int *length) {
@@ -1231,12 +1509,20 @@ void addebugtgt_passivereal4array_(char *varname, float *var, int *length) {
   adDebugTgt_passiveReal4Array(varname, var, *length) ;
 }
 
+void addebugtgt_testcomplex16_(char *varname, cdcmplx *var, cdcmplx *vard) {
+  adDebugTgt_testComplex16(varname, *var, vard) ;
+}
+
 void addebugtgt_testreal8_(char *varname, double *var, double *vard) {
-  adDebugTgt_testReal8(varname, *var, *vard) ;
+  adDebugTgt_testReal8(varname, *var, vard) ;
 }
 
 void addebugtgt_testreal4_(char *varname, float *var, float *vard) {
-  adDebugTgt_testReal4(varname, *var, *vard) ;
+  adDebugTgt_testReal4(varname, *var, vard) ;
+}
+
+void addebugtgt_testcomplex16array_(char *varname, cdcmplx* var, cdcmplx* vard, int *length) {
+  adDebugTgt_testComplex16Array(varname, var, vard, *length) ;
 }
 
 void addebugtgt_testreal8array_(char *varname, double* var, double* vard, int *length) {
@@ -1247,12 +1533,20 @@ void addebugtgt_testreal4array_(char *varname, float* var, float* vard, int *len
   adDebugTgt_testReal4Array(varname, var, vard, *length) ;
 }
 
+void addebugtgt_concludecomplex16_(char* varname, cdcmplx *dep, cdcmplx *depd) {
+  adDebugTgt_concludeComplex16(varname, *dep, depd) ;
+}
+
 void addebugtgt_concludereal8_(char* varname, double *dep, double *depd) {
-  adDebugTgt_concludeReal8(varname, *dep, *depd) ;
+  adDebugTgt_concludeReal8(varname, *dep, depd) ;
 }
 
 void addebugtgt_concludereal4_(char* varname, float *dep, float *depd) {
-  adDebugTgt_concludeReal4(varname, *dep, *depd) ;
+  adDebugTgt_concludeReal4(varname, *dep, depd) ;
+}
+
+void addebugtgt_concludecomplex16array_(char* varname, cdcmplx *dep, cdcmplx *depd, int *length) {
+  adDebugTgt_concludeComplex16Array(varname, dep, depd, *length) ;
 }
 
 void addebugtgt_concludereal8array_(char* varname, double *dep, double *depd, int *length) {
@@ -1311,12 +1605,20 @@ void addebugadj_rwreal8_(double *vard) {
   adDebugAdj_rwReal8(vard) ;
 }
 
+void addebugadj_rwcomplex16_(cdcmplx *vard) {
+  adDebugAdj_rwComplex16(vard) ;
+}
+
 void addebugadj_rreal4_(float *vard) {
   adDebugAdj_rReal4(vard) ;
 }
 
 void addebugadj_rreal8_(double *vard) {
   adDebugAdj_rReal8(vard) ;
+}
+
+void addebugadj_rcomplex16_(cdcmplx *vard) {
+  adDebugAdj_rComplex16(vard) ;
 }
 
 void addebugadj_wreal4_(float *vard) {
@@ -1327,12 +1629,20 @@ void addebugadj_wreal8_(double *vard) {
   adDebugAdj_wReal8(vard) ;
 }
 
+void addebugadj_wcomplex16_(cdcmplx *vard) {
+  adDebugAdj_wComplex16(vard) ;
+}
+
 void addebugadj_rwreal4array_(float *vard, int *length) {
   adDebugAdj_rwReal4Array(vard, *length) ;
 }
 
 void addebugadj_rwreal8array_(double *vard, int *length) {
   adDebugAdj_rwReal8Array(vard, *length) ;
+}
+
+void addebugadj_rwcomplex16array_(cdcmplx *vard, int *length) {
+  adDebugAdj_rwComplex16Array(vard, *length) ;
 }
 
 void addebugadj_rreal4array_(float *vard, int *length) {
@@ -1343,12 +1653,20 @@ void addebugadj_rreal8array_(double *vard, int *length) {
   adDebugAdj_rReal8Array(vard, *length) ;
 }
 
+void addebugadj_rcomplex16array_(cdcmplx *vard, int *length) {
+  adDebugAdj_rComplex16Array(vard, *length) ;
+}
+
 void addebugadj_wreal4array_(float *vard, int *length) {
   adDebugAdj_wReal4Array(vard, *length) ;
 }
 
 void addebugadj_wreal8array_(double *vard, int *length) {
   adDebugAdj_wReal8Array(vard, *length) ;
+}
+
+void addebugadj_wcomplex16array_(cdcmplx *vard, int *length) {
+  adDebugAdj_wComplex16Array(vard, *length) ;
 }
 
 void addebugadj_rwdisplay_(char *placename, int *indent) {
@@ -1369,10 +1687,4 @@ void addebugadj_skip_(char* placename) {
 
 void addebugadj_conclude_() {
   adDebugAdj_conclude() ;
-}
-
-/* Pour jouer a debugger MITgcm. Enlever ensuite! */
-
-void addebugtgt_trstreal8array_(char *varname, double* var, double* vard, int *length) {
-  dbad_adDebugTgt_testReal8Array(varname, var, vard, *length, -1) ;
 }

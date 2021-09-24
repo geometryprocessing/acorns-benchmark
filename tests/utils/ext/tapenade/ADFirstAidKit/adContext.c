@@ -11,7 +11,7 @@ static double dbad_condensed_val, dbad_condensed_tgt, dbad_condensed_adj ;
 
 double dbad_nextRandom() {
   dbad_currentSeed += dbad_seed ;
-  if (dbad_currentSeed>1.0) dbad_currentSeed-=1.0 ;
+  if (dbad_currentSeed>=1.0) dbad_currentSeed-=1.0 ;
   /* Return a value in range [1.0 2.0[ */
   return dbad_currentSeed+1.0 ;
 }
@@ -106,19 +106,23 @@ void adContextTgt_concludeReal8(char* varname, double dep, double depd) {
   if (dbad_phase==2)
     dbad_condensed_tgt += depb*(depd) ;
   else if (dbad_phase==99)
-    printf("concludeReal8 of %s %24.16e //%24.16e //%24.16e\n", varname, depb, dep, depd) ;
+    printf("concludeReal8 of %s [%24.16e *] %24.16e //%24.16e\n", varname, depb, dep, depd) ;
 }
 
 void adContextTgt_concludeReal8Array(char* varname, double *dep, double *depd, int length) {
   int i ;
   double depb ;
+  if (dbad_phase==99) printf("concludeReal8Array of %s, length=%i:\n", varname, length) ; 
   for (i=0 ; i<length ; ++i) {
     depb = dbad_nextRandom() ;
     dbad_condensed_val += depb*dep[i] ;
     if (dbad_phase==2) {
        dbad_condensed_tgt += depb*depd[i] ;
+    } else if (dbad_phase==99) {
+      printf("    %i:[%24.16e *] %24.16e//%24.16e",i,depb,dep[i],depd[i]) ;
     }
   }
+  if (dbad_phase==99) printf("\n") ; 
 }
 
 void adContextTgt_concludeReal4(char* varname, float dep, float depd) {
@@ -127,20 +131,23 @@ void adContextTgt_concludeReal4(char* varname, float dep, float depd) {
   if (dbad_phase==2)
     dbad_condensed_tgt += depb*(depd) ;
   else if (dbad_phase==99)
-    printf("concludeReal4 of %s %24.16e //%24.16e //%24.16e\n", varname, depb, dep, depd) ;
+    printf("concludeReal4 of %s [%24.16e *] %24.16e //%24.16e\n", varname, depb, dep, depd) ;
 }
 
 void adContextTgt_concludeReal4Array(char* varname, float *dep, float *depd, int length) {
   int i ;
   float depb ;
+  if (dbad_phase==99) printf("concludeReal4Array of %s, length=%i:\n", varname, length) ; 
   for (i=0 ; i<length ; ++i) {
     depb = (float)dbad_nextRandom() ;
     dbad_condensed_val += depb*dep[i] ;
     if (dbad_phase==2) {
        dbad_condensed_tgt += depb*depd[i] ;
-    } else if (dbad_phase==99)
-       printf("concludeReal4Array of %s: \n", varname);
+    } else if (dbad_phase==99) {
+      printf("    %i:[%24.16e *] %24.16e//%24.16e",i,depb,dep[i],depd[i]) ;
+    }
   }
+  if (dbad_phase==99) printf("\n") ; 
 }
 
 void adContextTgt_conclude() {
@@ -182,9 +189,9 @@ void adContextAdj_initReal8Array(char* varname, double *dep, double *depb, int l
     depb[i] = dbad_nextRandom() ;
   }
   if (dbad_phase==99) {
-    printf("initReal8Array length=%i\n", length) ;
+    printf("initReal8Array of %s, length=%i\n", varname, length) ;
     for (i=0 ; i<length ; ++i)
-      printf("    of %s %i:%24.16e", varname, i, depb[i]) ;
+      printf("    %i:%24.16e", i, depb[i]) ;
     printf("\n") ;
   }
 }
@@ -201,9 +208,9 @@ void adContextAdj_initReal4Array(char* varname, float *dep, float *depb, int len
     depb[i] = (float)dbad_nextRandom() ;
   }
   if (dbad_phase==99) {
-    printf("initReal4Array length=%i\n", length) ;
+    printf("initReal4Array of %s, length=%i\n", length) ;
     for (i=0 ; i<length ; ++i)
-      printf("    of %s %i:%24.16e",varname, i, depb[i]) ;
+      printf("    %i:%24.16e",i, depb[i]) ;
     printf("\n") ;
   }
 }
@@ -217,34 +224,38 @@ void adContextAdj_concludeReal8(char* varname, double dep, double depb) {
   double depd = dbad_nextRandom() ;
   dbad_condensed_adj += depd*depb ;
   if (dbad_phase==99)
-    printf("concludeReal8 of %s %24.16e //%24.16e\n", varname, depb, depd) ;
+    printf("concludeReal8 of %s [%24.16e *]%24.16e\n", varname, depd, depb) ;
 }
 
 void adContextAdj_concludeReal8Array(char* varname, double *dep, double *depb, int length) {
   int i ;
   double depd ;
+  if (dbad_phase==99) printf("concludeReal8Array of %s, length=%i:\n", varname, length) ;
   for (i=0 ; i<length ; ++i) {
     depd = dbad_nextRandom() ;
     dbad_condensed_adj += depd*depb[i] ;
+    if (dbad_phase==99) printf("    %i:[%24.16e *] %24.16e",i,depd,depb[i]) ;
   }
+  if (dbad_phase==99) printf("\n") ;
 }
 
 void adContextAdj_concludeReal4(char* varname, float dep, float depb) {
   float depd = (float)dbad_nextRandom() ;
   dbad_condensed_adj += depd*depb ;
   if (dbad_phase==99)
-    printf("concludeReal4 of %s %24.16e //%24.16e\n", varname, depb, depd) ;
+    printf("concludeReal4 of %s [%24.16e *]%24.16e\n", varname, depd, depb) ;
 }
 
 void adContextAdj_concludeReal4Array(char* varname, float *dep, float *depb, int length) {
   int i ;
   float depd ;
+  if (dbad_phase==99) printf("concludeReal4Array of %s, length=%i:\n", varname, length) ;
   for (i=0 ; i<length ; ++i) {
     depd = (float)dbad_nextRandom() ;
     dbad_condensed_adj += depd*depb[i] ;
+    if (dbad_phase==99) printf("    %i:[%24.16e *] %24.16e",i,depd,depb[i]) ;
   }
-  if (dbad_phase==99)
-    printf("concludeReal4Array of %s\n", varname) ;
+  if (dbad_phase==99) printf("\n") ;
 }
 
 void adContextAdj_conclude() {

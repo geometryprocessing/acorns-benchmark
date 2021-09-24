@@ -1218,6 +1218,15 @@ function sqrt:
        expressions(binary(metavar X, none(),
                           div(realCst 1.0, mul(realCst 2.0, metavar TOP_EXPRESSION)))))
 
+function csqrt:
+  intrinsic:
+  shape: (param 1, result)
+  type: (complex(), complex())
+  derivative : binary(call(none(), ident csqrt, expressions(metavar X)),
+       none(),
+       expressions(binary(metavar X, none(),
+                          div(realCst 1.0, mul(realCst 2.0, metavar TOP_EXPRESSION)))))
+
 function dsqrt:
   intrinsic:
   shape: (param 1, result)
@@ -1314,6 +1323,11 @@ function dcmplx:
   shape: (param 1, result)
   type: (modifiedType(modifiers(ident double), metavar complex),
 	 modifiedType(modifiers(ident double), metavar complex))
+  derivative : binary(call(none(), ident dcmplx, expressions(metavar X)),
+       none(),
+       expressions(binary(metavar X, none(),
+	                  call(none(), ident dcmplx, expressions(realCst 1.0, realCst 0.0)))
+                   ))
 
 function dcmplx:
   intrinsic:
@@ -1321,6 +1335,12 @@ function dcmplx:
   type: (modifiedType(modifiers(ident double), metavar real),
 	 modifiedType(modifiers(ident double), metavar real),
 	 modifiedType(modifiers(ident double), complex()))
+  derivative : binary(call(none(), ident dcmplx, expressions(metavar X, metavar Y)),
+       none(),
+       expressions(binary(metavar X, none(),
+	                  call(none(), ident dcmplx, expressions(realCst 1.0, realCst 0.0))),
+                   binary(metavar Y, none(),
+	                  call(none(), ident dcmplx, expressions(realCst 0.0, realCst 1.0)))))
 
 function dcmplx:
   intrinsic:
@@ -1329,11 +1349,28 @@ function dcmplx:
 	 modifiedType(modifiers(ident double), metavar real),
 	 none(),
 	 modifiedType(modifiers(ident double), complex()))
+  derivative : binary(call(none(), ident dcmplx, expressions(metavar X, metavar Y, metavar K)),
+       none(),
+       expressions(binary(metavar X, none(),
+	                  call(none(), ident dcmplx, expressions(realCst 1.0, realCst 0.0, metavar K))),
+                   binary(metavar Y, none(),
+	                  call(none(), ident dcmplx, expressions(realCst 0.0, realCst 1.0, metavar K)))))
 
 function conjg:
   intrinsic:
   shape: (param 1, result)
   type: (complex(), complex())
+  derivative : binary(call(none(), ident conjg, expressions(metavar X)),
+       none(),
+       expressions())
+
+function dconjg:
+  intrinsic:
+  shape: (param 1, result)
+  type: (complex(), complex())
+  derivative : binary(call(none(), ident dconjg, expressions(metavar X)),
+       none(),
+       expressions())
 
 function real:
   intrinsic:

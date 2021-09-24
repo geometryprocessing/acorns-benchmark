@@ -18,7 +18,7 @@ import wenzel_utils
 import pytorch_utils
 import tapenade_utils
 
-tapenade = False
+tapenade = True
 
 
 def generate_params(num_params, function_num):
